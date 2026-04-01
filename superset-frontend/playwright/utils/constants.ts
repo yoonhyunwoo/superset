@@ -58,4 +58,9 @@ export const TIMEOUT = {
    * File import/upload operations (upload + server processing)
    */
   FILE_IMPORT: 30000, // 30s for file import operations
+
+  /**
+   * SQL query execution (query → backend processing → results)
+   */
+  QUERY_EXECUTION: 15000, // 15s for SQL queries that may take longer than default expect timeout
 } as const;
