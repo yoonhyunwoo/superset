@@ -22,6 +22,7 @@ export { AceEditor } from './AceEditor';
 export { AgGrid } from './AgGrid';
 export { Button } from './Button';
 export { Checkbox } from './Checkbox';
+export { EditableTabs } from './EditableTabs';
 export { Form } from './Form';
 export { Input } from './Input';
 export { Menu } from './Menu';

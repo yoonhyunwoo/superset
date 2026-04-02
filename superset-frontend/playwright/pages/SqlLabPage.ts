@@ -20,6 +20,7 @@
 import { Page, Locator } from '@playwright/test';
 import { AceEditor } from '../components/core/AceEditor';
 import { AgGrid } from '../components/core/AgGrid';
+import { EditableTabs } from '../components/core/EditableTabs';
 import { Select } from '../components/core/Select';
 import { Modal } from '../components/core/Modal';
 import { URL } from '../utils/urls';
@@ -32,14 +33,11 @@ import { TIMEOUT } from '../utils/constants';
  */
 export class SqlLabPage {
   private readonly page: Page;
+  private readonly editorTabs: EditableTabs;
 
   private static readonly SELECTORS = {
     SQL_EDITOR_TABS: '[data-test="sql-editor-tabs"]',
-    TABLIST: '[data-test="sql-editor-tabs"] > [role="tablist"]',
-    TAB: '[data-test="sql-editor-tabs"] > [role="tablist"] [role="tab"]:not([type="button"])',
     ADD_TAB_ICON: '[data-test="add-tab-icon"]',
-    DROPDOWN_TRIGGER: '[data-test="dropdown-trigger"]',
-    CLOSE_TAB_MENU_OPTION: '[data-test="close-tab-menu-option"]',
     RUN_QUERY_BUTTON: '[data-test="run-query-action"]',
     SOUTH_PANE: '[data-test="south-pane"]',
     EXPLORE_RESULTS_BUTTON: '[data-test="explore-results-button"]',
@@ -49,12 +47,15 @@ export class SqlLabPage {
     LEFT_BAR: '[data-test="sql-editor-left-bar"]',
     DATABASE_SELECTOR: '[data-test="DatabaseSelector"]',
     LIMIT_DROPDOWN: '.limitDropdown',
-    TAB_REMOVE: '[aria-label="remove"]',
     SAVE_DATASET_BUTTON: 'button[aria-label="Save dataset"]',
   } as const;
 
   constructor(page: Page) {
     this.page = page;
+    this.editorTabs = new EditableTabs(
+      page,
+      page.locator(SqlLabPage.SELECTORS.SQL_EDITOR_TABS),
+    );
   }
 
   // ── Navigation ──
@@ -66,23 +67,29 @@ export class SqlLabPage {
   async waitForPageLoad(options?: { timeout?: number }): Promise<void> {
     // SQL Lab with dev server can be slow on first load (webpack HMR + React hydration)
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
-    await this.page
-      .locator(SqlLabPage.SELECTORS.SQL_EDITOR_TABS)
-      .waitFor({ state: 'visible', timeout });
+    await this.editorTabs.element.waitFor({ state: 'visible', timeout });
   }
 
   /**
    * Ensures at least one query editor tab exists. Creates one if SQL Lab
    * is in the empty state ("Add a new tab to create SQL Query").
    * Waits for the ace editor to be ready before returning.
+   *
+   * SQL Lab renders type="card" in empty state (no .ant-tabs-nav-add button),
+   * so we click the SQL Lab-specific [data-test="add-tab-icon"] instead of
+   * using EditableTabs.addTab() which requires type="editable-card".
    */
   async ensureEditorReady(): Promise<void> {
     const editorLocator = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
     const editorCount = await editorLocator.count();
     if (editorCount === 0) {
-      await this.addTab();
-      // Wait for new tab panel to render
-      await this.page.waitForTimeout(1000);
+      // Empty state: click the add-tab icon directly (works in both card modes)
+      await this.editorTabs.element
+        .locator(SqlLabPage.SELECTORS.ADD_TAB_ICON)
+        .first()
+        .click();
+      // Wait for ace editor to render after tab creation
+      await editorLocator.first().waitFor({ state: 'visible' });
     }
     await this.getEditor().waitForReady();
   }
@@ -120,25 +127,16 @@ export class SqlLabPage {
 
   // ── Tab Management ──
 
-  private get tabs(): Locator {
-    return this.page.locator(SqlLabPage.SELECTORS.TAB);
-  }
-
   async getTabCount(): Promise<number> {
-    return this.tabs.count();
+    return this.editorTabs.getTabCount();
   }
 
   async getTabNames(): Promise<string[]> {
-    return this.tabs.allTextContents();
+    return this.editorTabs.getTabNames();
   }
 
   async addTab(): Promise<void> {
-    // Target the visible "Add tab" button — there can be duplicates in the DOM
-    await this.page
-      .locator(SqlLabPage.SELECTORS.SQL_EDITOR_TABS)
-      .getByRole('button', { name: 'Add tab' })
-      .first()
-      .click();
+    await this.editorTabs.addTab();
   }
 
   async addTabByShortcut(): Promise<void> {
@@ -148,24 +146,24 @@ export class SqlLabPage {
 
   async closeLastTab(): Promise<void> {
     const countBefore = await this.getTabCount();
-    // Click the × (close) button on the last tab.
-    await this.page
-      .locator(
-        `${SqlLabPage.SELECTORS.TABLIST} ${SqlLabPage.SELECTORS.TAB_REMOVE}`,
-      )
-      .last()
-      .click();
+    await this.editorTabs.removeLastTab();
     // Wait for tab count to decrease
-    const tabSelector = SqlLabPage.SELECTORS.TAB;
     await this.page.waitForFunction(
-      ([sel, expected]) => document.querySelectorAll(sel).length === expected,
-      [tabSelector, countBefore - 1] as const,
+      ([count, expected]) => {
+        const tabs = document.querySelectorAll(
+          '[data-test="sql-editor-tabs"] [role="tab"]',
+        );
+        return tabs.length === expected;
+      },
+      [countBefore, countBefore - 1] as const,
       { timeout: 5000 },
     );
   }
 
   getTab(name: string): Locator {
-    return this.page.locator('[role="tab"]', { hasText: name });
+    // Use hasText (substring) rather than getByRole name (accessible name)
+    // because getTabNames() returns text content which may include close-icon text.
+    return this.editorTabs.element.locator('[role="tab"]', { hasText: name });
   }
 
   // ── Database Selection (Left Sidebar) ──

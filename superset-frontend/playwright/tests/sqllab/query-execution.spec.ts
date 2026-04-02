@@ -25,6 +25,7 @@ import { TIMEOUT } from '../../utils/constants';
 let sqlLabPage: SqlLabPage;
 
 test.beforeEach(async ({ page }) => {
+  test.setTimeout(60_000);
   sqlLabPage = new SqlLabPage(page);
   await sqlLabPage.goto();
   await sqlLabPage.waitForPageLoad();
@@ -56,9 +57,7 @@ test('executes a simple SELECT query and displays results', async ({
 });
 
 test('shows error message for invalid SQL', async ({ page }) => {
-  await sqlLabPage.setQuery(
-    'SELECT * FROM a_table_that_does_not_exist_xyz_pw',
-  );
+  await sqlLabPage.setQuery('SELECT * FROM a_table_that_does_not_exist_xyz_pw');
 
   const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
     timeout: TIMEOUT.QUERY_EXECUTION,

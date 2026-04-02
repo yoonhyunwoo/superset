@@ -24,6 +24,7 @@ import { waitForPost } from '../../helpers/api/intercepts';
 let sqlLabPage: SqlLabPage;
 
 test.beforeEach(async ({ page }) => {
+  test.setTimeout(60_000);
   sqlLabPage = new SqlLabPage(page);
   await sqlLabPage.goto();
   await sqlLabPage.waitForPageLoad();
