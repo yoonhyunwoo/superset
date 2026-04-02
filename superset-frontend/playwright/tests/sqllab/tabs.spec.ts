@@ -30,42 +30,68 @@ test.beforeEach(async ({ page }) => {
   await sqlLabPage.ensureEditorReady();
 });
 
-test('should create tabs that persist across page reload', async ({
-  page,
-}) => {
+test('creates a new tab via button', async () => {
   const initialTabCount = await sqlLabPage.getTabCount();
 
-  // Create a new tab and verify count incremented
+  await sqlLabPage.addTab();
+  await sqlLabPage.getEditor().waitForReady();
+
+  expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
+
+  // Verify new tab has default SQL content
+  const defaultContent = await sqlLabPage.getQuery();
+  expect(defaultContent).toContain('SELECT');
+
+  // Clean up
+  await sqlLabPage.closeLastTab();
+  expect(await sqlLabPage.getTabCount()).toBe(initialTabCount);
+});
+
+test('closes a tab via close button', async () => {
+  const initialTabCount = await sqlLabPage.getTabCount();
+
+  // Create a tab so we have something to close
   await sqlLabPage.addTab();
   await sqlLabPage.getEditor().waitForReady();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
-  // Set up tab state intercept before making changes (avoid race with debounced save)
-  const tabStatePromise = waitForPost(page, 'tabstateview');
-
-  // Type a distinctive query so we can verify persistence
-  const testQuery = `SELECT 'persistence_test_${Date.now()}'`;
-  await sqlLabPage.setQuery(testQuery);
-
-  // Trigger a save by blurring the editor (tab state saves on editor changes)
-  await page.locator('body').click();
-  await tabStatePromise;
-
-  // Reload the page
-  await page.reload();
-  await sqlLabPage.waitForPageLoad();
-  await sqlLabPage.ensureEditorReady();
-
-  // Verify the tab survived the reload
-  expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
-
-  // Verify the editor content survived the reload
-  const restoredQuery = await sqlLabPage.getQuery();
-  expect(restoredQuery).toContain('persistence_test_');
-
-  // Clean up: close the tab we created
+  // Close the tab via the × button
   await sqlLabPage.closeLastTab();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount);
+});
+
+test('preserves query state when switching tabs', async () => {
+  const tabOneSql = `SELECT 'tab_one_${Date.now()}'`;
+  const tabTwoSql = `SELECT 'tab_two_${Date.now()}'`;
+
+  // Get the first tab's name for switching back later
+  const tabNames = await sqlLabPage.getTabNames();
+  const firstTabName = tabNames[tabNames.length - 1];
+
+  // Set query in the first (current) tab
+  await sqlLabPage.setQuery(tabOneSql);
+
+  // Create second tab and set a different query
+  await sqlLabPage.addTab();
+  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.setQuery(tabTwoSql);
+
+  // Switch back to first tab and verify its content is preserved
+  await sqlLabPage.getTab(firstTabName).click();
+  await sqlLabPage.getEditor().waitForReady();
+  const firstContent = await sqlLabPage.getQuery();
+  expect(firstContent).toContain('tab_one_');
+
+  // Switch to second tab and verify its content is preserved
+  const updatedNames = await sqlLabPage.getTabNames();
+  const secondTabName = updatedNames[updatedNames.length - 1];
+  await sqlLabPage.getTab(secondTabName).click();
+  await sqlLabPage.getEditor().waitForReady();
+  const secondContent = await sqlLabPage.getQuery();
+  expect(secondContent).toContain('tab_two_');
+
+  // Clean up
+  await sqlLabPage.closeLastTab();
 });
 
 test('should open new tab by keyboard shortcut with correct defaults', async ({

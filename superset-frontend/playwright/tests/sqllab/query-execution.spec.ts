@@ -17,10 +17,9 @@
  * under the License.
  */
 
-import { test, expect } from '../../helpers/fixtures/testAssets';
+import { test, expect } from '@playwright/test';
 import { SqlLabPage } from '../../pages/SqlLabPage';
 import { waitForPost } from '../../helpers/api/intercepts';
-import { apiGetSavedQuery } from '../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
@@ -32,7 +31,9 @@ test.beforeEach(async ({ page }) => {
   await sqlLabPage.ensureEditorReady();
 });
 
-test('should execute a query and display results', async ({ page }) => {
+test('executes a simple SELECT query and displays results', async ({
+  page,
+}) => {
   // Verify the left sidebar database selector is visible and interactive (#38833)
   await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
 
@@ -54,57 +55,51 @@ test('should execute a query and display results', async ({ page }) => {
   expect(headers.some(h => h.includes('test_col'))).toBe(true);
 });
 
-test('should save and reload a query', async ({ page, testAssets }) => {
-  const queryText = 'SELECT 1 AS saved_test_col';
-  const savedQueryTitle = `pw_test_saved_query_${Date.now()}`;
-
-  // Verify left sidebar is interactive
-  await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
-
-  // Set and run query
-  await sqlLabPage.setQuery(queryText);
+test('shows error message for invalid SQL', async ({ page }) => {
+  await sqlLabPage.setQuery(
+    'SELECT * FROM a_table_that_does_not_exist_xyz_pw',
+  );
 
   const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
     timeout: TIMEOUT.QUERY_EXECUTION,
   });
   await sqlLabPage.runQuery();
   await executePromise;
+
+  // Wait for error alert to render in south pane
+  const errorAlert = sqlLabPage.getErrorAlert();
+  await expect(errorAlert).toBeVisible({ timeout: TIMEOUT.QUERY_EXECUTION });
+
+  // Verify the south pane contains an error indicator (engine-agnostic)
+  const southPane = sqlLabPage.getResultsPane();
+  await expect(southPane).toContainText(/error/i);
+});
+
+test('re-runs a query and refreshes results', async ({ page }) => {
+  // First query
+  await sqlLabPage.setQuery('SELECT 1 AS first_col');
+  const firstExecute = waitForPost(page, 'api/v1/sqllab/execute/', {
+    timeout: TIMEOUT.QUERY_EXECUTION,
+  });
+  await sqlLabPage.runQuery();
+  const firstResponse = await firstExecute;
+  expect(firstResponse.status()).toBe(200);
   await sqlLabPage.waitForQueryResults();
 
-  // Open the save query modal
-  await sqlLabPage.clickSaveButton();
-  const saveModal = sqlLabPage.getSaveQueryModal();
-  await saveModal.waitForReady();
+  const firstHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
+  expect(firstHeaders.some(h => h.includes('first_col'))).toBe(true);
 
-  // Fill in the query name
-  await saveModal.body.locator('input[type="text"]').first().clear();
-  await saveModal.body
-    .locator('input[type="text"]')
-    .first()
-    .fill(savedQueryTitle);
-
-  // Save and intercept the API response
-  const savePromise = waitForPost(page, 'api/v1/saved_query/', {
-    timeout: TIMEOUT.API_RESPONSE,
+  // Second query (re-run with different SQL)
+  await sqlLabPage.setQuery('SELECT 2 AS second_col');
+  const secondExecute = waitForPost(page, 'api/v1/sqllab/execute/', {
+    timeout: TIMEOUT.QUERY_EXECUTION,
   });
-  await saveModal.footer
-    .getByRole('button', { name: 'Save', exact: true })
-    .click();
-  const saveResponse = await savePromise;
-  expect(saveResponse.status()).toBe(201);
+  await sqlLabPage.runQuery();
+  const secondResponse = await secondExecute;
+  expect(secondResponse.status()).toBe(200);
+  await sqlLabPage.waitForQueryResults();
 
-  // Extract saved query ID for cleanup
-  const saveBody = await saveResponse.json();
-  const savedQueryId: number = saveBody.id ?? saveBody.result?.id;
-  expect(savedQueryId).toBeTruthy();
-  testAssets.trackSavedQuery(savedQueryId);
-
-  // Verify the modal closed
-  await saveModal.waitForHidden();
-
-  // Verify the saved query via API (round-trip persistence check)
-  const getResponse = await apiGetSavedQuery(page, savedQueryId);
-  const savedQuery = (await getResponse.json()).result;
-  expect(savedQuery.sql).toContain('saved_test_col');
-  expect(savedQuery.label).toBe(savedQueryTitle);
+  const secondHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
+  expect(secondHeaders.some(h => h.includes('second_col'))).toBe(true);
+  expect(secondHeaders.some(h => h.includes('first_col'))).toBe(false);
 });

@@ -50,6 +50,7 @@ export class SqlLabPage {
     DATABASE_SELECTOR: '[data-test="DatabaseSelector"]',
     LIMIT_DROPDOWN: '.limitDropdown',
     TAB_REMOVE: '[aria-label="remove"]',
+    SAVE_DATASET_BUTTON: 'button[aria-label="Save dataset"]',
   } as const;
 
   constructor(page: Page) {
@@ -237,6 +238,10 @@ export class SqlLabPage {
     return this.page.locator(SqlLabPage.SELECTORS.SOUTH_PANE);
   }
 
+  getErrorAlert(): Locator {
+    return this.getResultsPane().locator('.ant-alert-error');
+  }
+
   // ── Row Limit ──
 
   async getRowLimit(): Promise<string> {
@@ -259,6 +264,21 @@ export class SqlLabPage {
 
   getSaveQueryModal(): Modal {
     return new Modal(this.page, SqlLabPage.SELECTORS.SAVE_QUERY_MODAL);
+  }
+
+  // ── Save Dataset ──
+
+  async clickSaveDatasetButton(): Promise<void> {
+    await this.activePanel
+      .locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON)
+      .click();
+  }
+
+  getSaveDatasetModal(): Modal {
+    return new Modal(
+      this.page,
+      '[data-test="Save or Overwrite Dataset-modal"] .ant-modal',
+    );
   }
 
   // ── Create Chart ──
