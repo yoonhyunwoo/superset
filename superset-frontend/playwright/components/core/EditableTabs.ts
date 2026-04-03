@@ -34,32 +34,13 @@ export class EditableTabs extends Tabs {
    * Clicks the add-tab button rendered by antd in editable-card mode.
    */
   async addTab(): Promise<void> {
-    await this.element
-      .getByRole('button', { name: 'Add tab' })
-      .click();
-  }
-
-  /**
-   * Returns the number of tabs (excludes the add button).
-   */
-  async getTabCount(): Promise<number> {
-    return this.element.getByRole('tab').count();
-  }
-
-  /**
-   * Returns the text content of all tabs.
-   */
-  async getTabNames(): Promise<string[]> {
-    return this.element.getByRole('tab').allTextContents();
+    await this.element.getByRole('button', { name: 'Add tab' }).click();
   }
 
   /**
    * Clicks the remove button on the last tab.
    */
   async removeLastTab(): Promise<void> {
-    await this.element
-      .locator('.ant-tabs-tab-remove')
-      .last()
-      .click();
+    await this.nav.locator('.ant-tabs-tab-remove').last().click();
   }
 }

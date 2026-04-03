@@ -21,6 +21,10 @@ import { Locator, Page } from '@playwright/test';
 
 /**
  * Tabs component for Ant Design tab navigation.
+ *
+ * Expects the locator to point to the `.ant-tabs` wrapper element
+ * (not the inner tablist) so that `nav` can scope to the outer tab bar
+ * and exclude nested/inner tabs (e.g. Results / Query history in SQL Lab).
  */
 export class Tabs {
   readonly page: Page;
@@ -28,23 +32,47 @@ export class Tabs {
 
   constructor(page: Page, locator?: Locator) {
     this.page = page;
-    // Default to the tablist role if no specific locator provided
     this.locator = locator ?? page.getByRole('tablist');
   }
 
   /**
-   * Gets the tablist element locator
+   * The root element locator for this tabs component.
    */
   get element(): Locator {
     return this.locator;
   }
 
   /**
-   * Gets a tab by name, scoped to this tablist's container
+   * The tab navigation bar for this component.
+   * Scoped to the first `.ant-tabs-nav` descendant so that queries
+   * only hit this component's tabs, never nested/inner tab bars.
+   */
+  protected get nav(): Locator {
+    return this.locator.locator('.ant-tabs-nav').first();
+  }
+
+  /**
+   * Returns the number of tabs.
+   * Counts `.ant-tabs-tab` wrappers in the nav bar — one per physical tab,
+   * regardless of inner role="tab" elements (btn, remove button, etc.).
+   */
+  async getTabCount(): Promise<number> {
+    return this.nav.locator('.ant-tabs-tab').count();
+  }
+
+  /**
+   * Returns the text content of all tabs.
+   */
+  async getTabNames(): Promise<string[]> {
+    return this.nav.locator('.ant-tabs-tab-btn').allTextContents();
+  }
+
+  /**
+   * Gets a tab button by name, scoped to this component's nav bar.
    * @param tabName - The name/label of the tab
    */
   getTab(tabName: string): Locator {
-    return this.locator.getByRole('tab', { name: tabName });
+    return this.nav.locator('.ant-tabs-tab-btn').filter({ hasText: tabName });
   }
 
   /**

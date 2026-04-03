@@ -75,22 +75,33 @@ export class SqlLabPage {
    * is in the empty state ("Add a new tab to create SQL Query").
    * Waits for the ace editor to be ready before returning.
    *
-   * SQL Lab renders type="card" in empty state (no .ant-tabs-nav-add button),
-   * so we click the SQL Lab-specific [data-test="add-tab-icon"] instead of
-   * using EditableTabs.addTab() which requires type="editable-card".
+   * Uses a two-stage check to handle three states correctly:
+   * 1. Empty state (CI): type="card" with 1 placeholder tab, no editor → create tab
+   * 2. Loading after reload: real tabs exist, editor hasn't mounted yet → just wait
+   * 3. Normal: tabs + editor present → ready immediately
+   *
+   * Stage 1 checks editor presence (catches empty + placeholder).
+   * Stage 2 checks tab count to distinguish reload-loading (tabs > 1) from
+   * true empty state (0-1 placeholder tabs) when no editor exists.
    */
   async ensureEditorReady(): Promise<void> {
     const editorLocator = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
-    const editorCount = await editorLocator.count();
-    if (editorCount === 0) {
-      // Empty state: click the add-tab icon directly (works in both card modes)
-      await this.editorTabs.element
-        .locator(SqlLabPage.SELECTORS.ADD_TAB_ICON)
-        .first()
-        .click();
-      // Wait for ace editor to render after tab creation
-      await editorLocator.first().waitFor({ state: 'visible' });
+
+    if ((await editorLocator.count()) === 0) {
+      // No editor visible. Check if real tabs exist (loading after reload)
+      // or if this is the empty state (0 tabs or 1 placeholder "Add a new tab").
+      const tabCount = await this.getTabCount();
+      if (tabCount <= 1) {
+        // Empty state or placeholder — click add-tab icon (works in both card modes)
+        await this.editorTabs.element
+          .locator(SqlLabPage.SELECTORS.ADD_TAB_ICON)
+          .first()
+          .click();
+      }
+      // If tabCount > 1: real tabs exist, editor is loading after reload — just wait
     }
+
+    await editorLocator.first().waitFor({ state: 'visible' });
     await this.getEditor().waitForReady();
   }
 
@@ -149,21 +160,20 @@ export class SqlLabPage {
     await this.editorTabs.removeLastTab();
     // Wait for tab count to decrease
     await this.page.waitForFunction(
-      ([count, expected]) => {
-        const tabs = document.querySelectorAll(
-          '[data-test="sql-editor-tabs"] [role="tab"]',
-        );
-        return tabs.length === expected;
+      ([selector, expected]) => {
+        const container = document.querySelector(selector);
+        if (!container) return false;
+        const nav = container.querySelector(':scope > .ant-tabs-nav');
+        if (!nav) return false;
+        return nav.querySelectorAll('.ant-tabs-tab').length === expected;
       },
-      [countBefore, countBefore - 1] as const,
+      [SqlLabPage.SELECTORS.SQL_EDITOR_TABS, countBefore - 1] as const,
       { timeout: 5000 },
     );
   }
 
   getTab(name: string): Locator {
-    // Use hasText (substring) rather than getByRole name (accessible name)
-    // because getTabNames() returns text content which may include close-icon text.
-    return this.editorTabs.element.locator('[role="tab"]', { hasText: name });
+    return this.editorTabs.getTab(name);
   }
 
   // ── Database Selection (Left Sidebar) ──
