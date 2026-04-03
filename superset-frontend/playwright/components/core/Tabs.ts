@@ -69,6 +69,10 @@ export class Tabs {
 
   /**
    * Gets a tab button by name, scoped to this component's nav bar.
+   * Uses substring matching (hasText) because tab button text includes
+   * icon text (e.g. "Untitled Query 1 circle-solid"). Pass specific
+   * enough text to avoid ambiguity — Playwright strict mode will catch
+   * collisions (e.g. "Query 1" matching "Query 10").
    * @param tabName - The name/label of the tab
    */
   getTab(tabName: string): Locator {
