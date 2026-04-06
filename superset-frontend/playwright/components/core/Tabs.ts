@@ -69,16 +69,17 @@ export class Tabs {
 
   /**
    * Gets a tab button by name, scoped to this component's nav bar.
-   * Uses a regex with negative lookahead to prevent "Query 1" from
-   * matching "Query 10" or "Query 11" in persisted sessions.
-   * The pattern still handles trailing icon text (e.g. "Untitled Query 1 circle-solid").
+   * Anchored at start (^) with negative lookahead (?!\d) to prevent
+   * partial matches: "Query" won't match "Query 1", and "Query 1"
+   * won't match "Query 10". Trailing icon text (e.g. " circle-solid")
+   * is allowed since (?!\d) permits non-digit suffixes.
    * @param tabName - The name/label of the tab
    */
   getTab(tabName: string): Locator {
     const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return this.nav
       .locator('.ant-tabs-tab-btn')
-      .filter({ hasText: new RegExp(`${escaped}(?!\\d)`) });
+      .filter({ hasText: new RegExp(`^${escaped}(?!\\d)`) });
   }
 
   /**

@@ -79,7 +79,7 @@ test('saves a query and loads it from saved queries', async ({
 
   // Extract saved query ID for cleanup
   const saveBody = await saveResponse.json();
-  const savedQueryId: number = saveBody.id ?? saveBody.result?.id;
+  const savedQueryId: number = saveBody.result?.id ?? saveBody.id;
   expect(savedQueryId).toBeTruthy();
   testAssets.trackSavedQuery(savedQueryId);
 

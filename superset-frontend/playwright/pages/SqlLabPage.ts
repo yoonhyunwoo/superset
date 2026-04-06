@@ -108,14 +108,14 @@ export class SqlLabPage {
   // ── Active Tab Panel ──
 
   /**
-   * Gets the active (visible) tab panel. Ant Design keeps inactive tab panels
-   * mounted in the DOM (hidden via CSS). Using `:visible` ensures helpers like
-   * setQuery(), runQuery(), and getResultsGrid() target the active editor,
-   * not a hidden one from a previously selected tab.
+   * Gets the active tab panel. Ant Design keeps inactive tab panels mounted
+   * but sets aria-hidden="true" on them. Using :not([aria-hidden="true"])
+   * is more reliable than :visible during tab-switch animations where both
+   * panels may briefly have non-zero dimensions.
    */
   private get activePanel(): Locator {
     return this.page
-      .locator('[role="tabpanel"]:visible')
+      .locator('[role="tabpanel"]:not([aria-hidden="true"])')
       .filter({ has: this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR) });
   }
 
