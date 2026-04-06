@@ -18,12 +18,12 @@
  */
 
 import { expect } from '@playwright/test';
-import { test } from '../../helpers/fixtures/testAssets';
-import { SqlLabPage } from '../../pages/SqlLabPage';
-import { ExplorePage } from '../../pages/ExplorePage';
-import { waitForPost } from '../../helpers/api/intercepts';
-import { apiGetSavedQuery } from '../../helpers/api/savedQuery';
-import { TIMEOUT } from '../../utils/constants';
+import { test } from '../../../helpers/fixtures/testAssets';
+import { SqlLabPage } from '../../../pages/SqlLabPage';
+import { ExplorePage } from '../../../pages/ExplorePage';
+import { waitForPost } from '../../../helpers/api/intercepts';
+import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
+import { TIMEOUT } from '../../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
 

@@ -18,9 +18,9 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { SqlLabPage } from '../../pages/SqlLabPage';
-import { waitForPost } from '../../helpers/api/intercepts';
-import { TIMEOUT } from '../../utils/constants';
+import { SqlLabPage } from '../../../pages/SqlLabPage';
+import { waitForPost } from '../../../helpers/api/intercepts';
+import { TIMEOUT } from '../../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
 

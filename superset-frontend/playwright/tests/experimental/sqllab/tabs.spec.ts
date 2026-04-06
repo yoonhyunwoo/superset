@@ -18,8 +18,8 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { SqlLabPage } from '../../pages/SqlLabPage';
-import { waitForPost } from '../../helpers/api/intercepts';
+import { SqlLabPage } from '../../../pages/SqlLabPage';
+import { waitForPost } from '../../../helpers/api/intercepts';
 
 let sqlLabPage: SqlLabPage;
 
