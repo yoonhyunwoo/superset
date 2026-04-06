@@ -69,14 +69,16 @@ export class Tabs {
 
   /**
    * Gets a tab button by name, scoped to this component's nav bar.
-   * Uses substring matching (hasText) because tab button text includes
-   * icon text (e.g. "Untitled Query 1 circle-solid"). Pass specific
-   * enough text to avoid ambiguity — Playwright strict mode will catch
-   * collisions (e.g. "Query 1" matching "Query 10").
+   * Uses a regex with negative lookahead to prevent "Query 1" from
+   * matching "Query 10" or "Query 11" in persisted sessions.
+   * The pattern still handles trailing icon text (e.g. "Untitled Query 1 circle-solid").
    * @param tabName - The name/label of the tab
    */
   getTab(tabName: string): Locator {
-    return this.nav.locator('.ant-tabs-tab-btn').filter({ hasText: tabName });
+    const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.nav
+      .locator('.ant-tabs-tab-btn')
+      .filter({ hasText: new RegExp(`${escaped}(?!\\d)`) });
   }
 
   /**

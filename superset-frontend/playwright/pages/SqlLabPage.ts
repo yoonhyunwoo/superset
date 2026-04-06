@@ -108,15 +108,15 @@ export class SqlLabPage {
   // ── Active Tab Panel ──
 
   /**
-   * Gets the active (visible) tab panel. SQL Lab can have multiple tab panels
-   * in the DOM; only the active one is visible. Scoping to this avoids
-   * strict mode violations from duplicate elements in inactive panels.
+   * Gets the active (visible) tab panel. Ant Design keeps inactive tab panels
+   * mounted in the DOM (hidden via CSS). Using `:visible` ensures helpers like
+   * setQuery(), runQuery(), and getResultsGrid() target the active editor,
+   * not a hidden one from a previously selected tab.
    */
   private get activePanel(): Locator {
     return this.page
-      .locator('[role="tabpanel"]')
-      .filter({ has: this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR) })
-      .first();
+      .locator('[role="tabpanel"]:visible')
+      .filter({ has: this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR) });
   }
 
   // ── Editor ──
@@ -236,14 +236,14 @@ export class SqlLabPage {
   getResultsGrid(): AgGrid {
     return new AgGrid(
       this.page,
-      this.page
+      this.activePanel
         .locator(SqlLabPage.SELECTORS.SOUTH_PANE)
         .locator('[role="grid"]'),
     );
   }
 
   getResultsPane(): Locator {
-    return this.page.locator(SqlLabPage.SELECTORS.SOUTH_PANE);
+    return this.activePanel.locator(SqlLabPage.SELECTORS.SOUTH_PANE);
   }
 
   getErrorAlert(): Locator {
@@ -253,13 +253,8 @@ export class SqlLabPage {
   // ── Row Limit ──
 
   async getRowLimit(): Promise<string> {
-    // Scope to active tab panel to avoid strict mode violation
-    // when multiple tabs have limitDropdown elements
-    const text = await this.page
-      .locator('[role="tabpanel"]')
-      .filter({ has: this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR) })
+    const text = await this.activePanel
       .locator(SqlLabPage.SELECTORS.LIMIT_DROPDOWN)
-      .first()
       .textContent();
     return text?.trim() ?? '';
   }
