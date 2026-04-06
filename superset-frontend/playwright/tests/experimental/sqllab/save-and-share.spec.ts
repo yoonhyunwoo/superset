@@ -24,6 +24,7 @@ import { ExplorePage } from '../../../pages/ExplorePage';
 import { waitForPost } from '../../../helpers/api/intercepts';
 import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../../utils/constants';
+import { URL } from '../../../utils/urls';
 
 let sqlLabPage: SqlLabPage;
 
@@ -91,6 +92,19 @@ test('saves a query and loads it from saved queries', async ({
   const savedQuery = (await getResponse.json()).result;
   expect(savedQuery.sql).toContain('saved_test_col');
   expect(savedQuery.label).toBe(savedQueryTitle);
+
+  // End-to-end reopen: navigate to SQL Lab with savedQueryId URL param.
+  // This exercises the PopEditorTab → popSavedQuery hydration path that
+  // the Saved Queries list and home page link to.
+  await page.goto(`${URL.SQLLAB}?savedQueryId=${savedQueryId}`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await sqlLabPage.waitForPageLoad();
+  await sqlLabPage.ensureEditorReady();
+
+  // Verify the saved query's SQL loaded into the editor
+  const loadedSql = await sqlLabPage.getQuery();
+  expect(loadedSql).toContain('saved_test_col');
 });
 
 test('creates a dataset from query results', async ({ page, testAssets }) => {
@@ -105,10 +119,8 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   });
   await sqlLabPage.runQuery();
   const executeResponse = await executePromise;
-
-  if (executeResponse.status() !== 200) {
-    test.skip(true, 'Query execution failed — database may not be configured');
-  }
+  // SELECT 1 doesn't depend on sample data — a non-200 is a real failure
+  expect(executeResponse.status()).toBe(200);
 
   await sqlLabPage.waitForQueryResults();
 

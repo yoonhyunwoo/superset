@@ -85,9 +85,10 @@ export class SqlLabPage {
    * true empty state (0-1 placeholder tabs) when no editor exists.
    */
   async ensureEditorReady(): Promise<void> {
-    const editorLocator = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
+    // Page-global check: are there ANY editors in the DOM (any tab)?
+    const anyEditor = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
 
-    if ((await editorLocator.count()) === 0) {
+    if ((await anyEditor.count()) === 0) {
       // No editor visible. Check if real tabs exist (loading after reload)
       // or if this is the empty state (0 tabs or 1 placeholder "Add a new tab").
       const tabCount = await this.getTabCount();
@@ -101,7 +102,12 @@ export class SqlLabPage {
       // If tabCount > 1: real tabs exist, editor is loading after reload — just wait
     }
 
-    await editorLocator.first().waitFor({ state: 'visible' });
+    // Wait for the editor in the ACTIVE panel, not page-global .first().
+    // In persisted multi-tab sessions, .first() can resolve to a hidden
+    // inactive editor. activePanel scopes to the visible tab panel.
+    await this.activePanel
+      .locator(SqlLabPage.SELECTORS.ACE_EDITOR)
+      .waitFor({ state: 'visible' });
     await this.getEditor().waitForReady();
   }
 
