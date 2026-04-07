@@ -60,8 +60,7 @@ test('saves a query and loads it from saved queries', async ({
   await saveModal.waitForReady();
 
   // Fill in the query name
-  await saveModal.nameInput.clear();
-  await saveModal.nameInput.fill(savedQueryTitle);
+  await saveModal.fillName(savedQueryTitle);
 
   // Save and intercept the API response
   const savePromise = waitForPost(page, 'api/v1/saved_query/', {
@@ -130,8 +129,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
 
   // Fill in a unique dataset name
   const datasetName = `pw_test_dataset_${Date.now()}`;
-  await saveDatasetModal.nameInput.clear();
-  await saveDatasetModal.nameInput.fill(datasetName);
+  await saveDatasetModal.fillName(datasetName);
 
   // Set up intercepts before clicking save:
   // 1. Dataset creation API

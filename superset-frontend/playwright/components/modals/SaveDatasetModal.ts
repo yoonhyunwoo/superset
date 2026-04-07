@@ -29,10 +29,15 @@ export class SaveDatasetModal extends Modal {
     super(page, '[data-test="Save or Overwrite Dataset-modal"] .ant-modal');
   }
 
-  get nameInput(): Input {
+  private get nameInput(): Input {
     return new Input(
       this.page,
       this.body.locator('input[placeholder="Dataset name"]'),
     );
+  }
+
+  async fillName(name: string): Promise<void> {
+    await this.nameInput.clear();
+    await this.nameInput.fill(name);
   }
 }

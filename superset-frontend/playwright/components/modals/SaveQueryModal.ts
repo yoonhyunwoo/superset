@@ -29,10 +29,15 @@ export class SaveQueryModal extends Modal {
     super(page, '.save-query-modal');
   }
 
-  get nameInput(): Input {
+  private get nameInput(): Input {
     return new Input(
       this.page,
       this.body.locator('input[type="text"]').first(),
     );
+  }
+
+  async fillName(name: string): Promise<void> {
+    await this.nameInput.clear();
+    await this.nameInput.fill(name);
   }
 }
