@@ -99,6 +99,16 @@ export class Tabs {
   }
 
   /**
+   * Returns the name of the currently active tab.
+   */
+  async getActiveTabName(): Promise<string> {
+    const text = await this.nav
+      .locator('.ant-tabs-tab-active .ant-tabs-tab-btn')
+      .textContent();
+    return text?.trim() ?? '';
+  }
+
+  /**
    * Checks if a tab is selected
    * @param tabName - The name/label of the tab
    */

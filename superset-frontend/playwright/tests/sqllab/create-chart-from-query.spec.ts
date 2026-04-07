@@ -18,10 +18,10 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { SqlLabPage } from '../../../pages/SqlLabPage';
-import { ExplorePage } from '../../../pages/ExplorePage';
-import { expectStatus } from '../../../helpers/api/assertions';
-import { TIMEOUT } from '../../../utils/constants';
+import { SqlLabPage } from '../../pages/SqlLabPage';
+import { ExplorePage } from '../../pages/ExplorePage';
+import { expectStatus } from '../../helpers/api/assertions';
+import { TIMEOUT } from '../../utils/constants';
 
 test('should navigate to Explore from SQL Lab query results', async ({
   page,

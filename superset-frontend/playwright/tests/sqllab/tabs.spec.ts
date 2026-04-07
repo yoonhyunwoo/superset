@@ -18,9 +18,9 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { SqlLabPage } from '../../../pages/SqlLabPage';
-import { waitForPost } from '../../../helpers/api/intercepts';
-import { TIMEOUT } from '../../../utils/constants';
+import { SqlLabPage } from '../../pages/SqlLabPage';
+import { waitForPost } from '../../helpers/api/intercepts';
+import { TIMEOUT } from '../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
 
@@ -64,16 +64,16 @@ test('preserves query state when switching tabs', async () => {
   const tabOneSql = `SELECT 'tab_one_${Date.now()}'`;
   const tabTwoSql = `SELECT 'tab_two_${Date.now()}'`;
 
-  // Get the first tab's name for switching back later
-  const tabNames = await sqlLabPage.getTabNames();
-  const firstTabName = tabNames[tabNames.length - 1];
+  // Get the active tab's name for switching back later
+  const firstTabName = await sqlLabPage.getActiveTabName();
 
   // Set query in the first (current) tab
   await sqlLabPage.setQuery(tabOneSql);
 
-  // Create second tab and set a different query
+  // Create second tab (becomes active) and set a different query
   await sqlLabPage.addTab();
   await sqlLabPage.editor.waitForReady();
+  const secondTabName = await sqlLabPage.getActiveTabName();
   await sqlLabPage.setQuery(tabTwoSql);
 
   // Switch back to first tab and verify its content is preserved
@@ -83,8 +83,6 @@ test('preserves query state when switching tabs', async () => {
   expect(firstContent).toContain('tab_one_');
 
   // Switch to second tab and verify its content is preserved
-  const updatedNames = await sqlLabPage.getTabNames();
-  const secondTabName = updatedNames[updatedNames.length - 1];
   await sqlLabPage.getTab(secondTabName).click();
   await sqlLabPage.editor.waitForReady();
   const secondContent = await sqlLabPage.getQuery();

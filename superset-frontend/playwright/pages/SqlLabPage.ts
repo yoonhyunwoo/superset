@@ -210,6 +210,10 @@ export class SqlLabPage {
     return this.editorTabs.getTabNames();
   }
 
+  async getActiveTabName(): Promise<string> {
+    return this.editorTabs.getActiveTabName();
+  }
+
   async addTab(): Promise<void> {
     await this.editorTabs.addTab();
   }

@@ -18,19 +18,19 @@
  */
 
 import { expect } from '@playwright/test';
-import { test } from '../../../helpers/fixtures/testAssets';
-import { SqlLabPage } from '../../../pages/SqlLabPage';
-import { ExplorePage } from '../../../pages/ExplorePage';
-import { SaveQueryModal } from '../../../components/modals/SaveQueryModal';
-import { SaveDatasetModal } from '../../../components/modals/SaveDatasetModal';
-import { waitForGet, waitForPost } from '../../../helpers/api/intercepts';
+import { test } from '../../helpers/fixtures/testAssets';
+import { SqlLabPage } from '../../pages/SqlLabPage';
+import { ExplorePage } from '../../pages/ExplorePage';
+import { SaveQueryModal } from '../../components/modals/SaveQueryModal';
+import { SaveDatasetModal } from '../../components/modals/SaveDatasetModal';
+import { waitForGet, waitForPost } from '../../helpers/api/intercepts';
 import {
   expectStatus,
   extractIdFromResponse,
-} from '../../../helpers/api/assertions';
-import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
-import { TIMEOUT } from '../../../utils/constants';
-import { URL } from '../../../utils/urls';
+} from '../../helpers/api/assertions';
+import { apiGetSavedQuery } from '../../helpers/api/savedQuery';
+import { TIMEOUT } from '../../utils/constants';
+import { URL } from '../../utils/urls';
 
 let sqlLabPage: SqlLabPage;
 
