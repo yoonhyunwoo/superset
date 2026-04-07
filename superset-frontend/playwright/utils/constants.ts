@@ -60,6 +60,11 @@ export const TIMEOUT = {
   FILE_IMPORT: 30000, // 30s for file import operations
 
   /**
+   * UI transition timeout (tab close, popover dismiss, dropdown close)
+   */
+  UI_TRANSITION: 5000, // 5s ceiling for Ant Design animations (~300-500ms actual)
+
+  /**
    * SQL query execution (query → backend processing → results)
    */
   QUERY_EXECUTION: 15000, // 15s for SQL queries that may take longer than default expect timeout

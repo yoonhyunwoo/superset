@@ -174,7 +174,7 @@ export class SqlLabPage {
         return nav.querySelectorAll('.ant-tabs-tab').length === expected;
       },
       [SqlLabPage.SELECTORS.SQL_EDITOR_TABS, countBefore - 1] as const,
-      { timeout: 5000 },
+      { timeout: TIMEOUT.UI_TRANSITION },
     );
   }
 
@@ -210,7 +210,9 @@ export class SqlLabPage {
     await popover.getByRole('button', { name: 'Select', exact: true }).click();
 
     // Wait for popover to close
-    await popover.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    await popover
+      .waitFor({ state: 'hidden', timeout: TIMEOUT.UI_TRANSITION })
+      .catch(() => {});
   }
 
   getDatabaseSelectorText(): Locator {
