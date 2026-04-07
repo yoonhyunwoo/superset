@@ -20,6 +20,7 @@
 import { test, expect } from '@playwright/test';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { waitForPost } from '../../../helpers/api/intercepts';
+import { expectStatus } from '../../../helpers/api/assertions';
 import { TIMEOUT } from '../../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
@@ -47,7 +48,7 @@ test('executes a simple SELECT query and displays results', async ({
   });
   await sqlLabPage.runQuery();
   const response = await executePromise;
-  expect(response.status()).toBe(200);
+  expectStatus(response, 200);
 
   // Verify results appear in the AG Grid
   await sqlLabPage.waitForQueryResults();
@@ -82,7 +83,7 @@ test('re-runs a query and refreshes results', async ({ page }) => {
   });
   await sqlLabPage.runQuery();
   const firstResponse = await firstExecute;
-  expect(firstResponse.status()).toBe(200);
+  expectStatus(firstResponse, 200);
   await sqlLabPage.waitForQueryResults();
 
   const firstHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
@@ -95,7 +96,7 @@ test('re-runs a query and refreshes results', async ({ page }) => {
   });
   await sqlLabPage.runQuery();
   const secondResponse = await secondExecute;
-  expect(secondResponse.status()).toBe(200);
+  expectStatus(secondResponse, 200);
   await sqlLabPage.waitForQueryResults();
 
   const secondHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();

@@ -23,6 +23,7 @@ import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { ExplorePage } from '../../../pages/ExplorePage';
 import { Modal } from '../../../components/core/Modal';
 import { waitForGet, waitForPost } from '../../../helpers/api/intercepts';
+import { expectStatus } from '../../../helpers/api/assertions';
 import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../../utils/constants';
 import { URL } from '../../../utils/urls';
@@ -77,7 +78,7 @@ test('saves a query and loads it from saved queries', async ({
     .getByRole('button', { name: 'Save', exact: true })
     .click();
   const saveResponse = await savePromise;
-  expect(saveResponse.status()).toBe(201);
+  expectStatus(saveResponse, 201);
 
   // Extract saved query ID for cleanup
   const saveBody = await saveResponse.json();
@@ -133,7 +134,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   await sqlLabPage.runQuery();
   const executeResponse = await executePromise;
   // SELECT 1 doesn't depend on sample data — a non-200 is a real failure
-  expect(executeResponse.status()).toBe(200);
+  expectStatus(executeResponse, 200);
 
   await sqlLabPage.waitForQueryResults();
 
