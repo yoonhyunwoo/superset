@@ -80,7 +80,7 @@ export class Modal {
    * @param buttonText - The text content of the button to click
    * @param options - Optional click options
    */
-  protected async clickFooterButton(
+  async clickFooterButton(
     buttonText: string,
     options?: { timeout?: number; force?: boolean; delay?: number },
   ): Promise<void> {

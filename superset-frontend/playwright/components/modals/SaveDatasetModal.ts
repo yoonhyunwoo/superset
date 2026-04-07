@@ -41,7 +41,4 @@ export class SaveDatasetModal extends Modal {
     await this.nameInput.fill(name);
   }
 
-  async clickSaveAndExplore(): Promise<void> {
-    await this.clickFooterButton('Save & Explore');
-  }
 }
