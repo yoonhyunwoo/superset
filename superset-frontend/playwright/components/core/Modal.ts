@@ -68,10 +68,10 @@ export class Modal {
   }
 
   /**
-   * Gets a footer button by text content (private helper)
+   * Gets a footer button by text content
    * @param buttonText - The text content of the button
    */
-  private getFooterButton(buttonText: string): Locator {
+  getFooterButton(buttonText: string): Locator {
     return this.footer.getByRole('button', { name: buttonText, exact: true });
   }
 

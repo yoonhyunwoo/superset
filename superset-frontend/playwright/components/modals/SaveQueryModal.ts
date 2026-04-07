@@ -17,8 +17,8 @@
  * under the License.
  */
 
-import { Locator, Page } from '@playwright/test';
-import { Modal } from '../core';
+import { Page } from '@playwright/test';
+import { Input, Modal } from '../core';
 
 /**
  * Save Query modal in SQL Lab.
@@ -29,11 +29,10 @@ export class SaveQueryModal extends Modal {
     super(page, '.save-query-modal');
   }
 
-  get nameInput(): Locator {
-    return this.body.locator('input[type="text"]').first();
-  }
-
-  get saveButton(): Locator {
-    return this.footer.getByRole('button', { name: 'Save', exact: true });
+  get nameInput(): Input {
+    return new Input(
+      this.page,
+      this.body.locator('input[type="text"]').first(),
+    );
   }
 }

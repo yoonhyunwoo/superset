@@ -17,8 +17,8 @@
  * under the License.
  */
 
-import { Locator, Page } from '@playwright/test';
-import { Modal } from '../core';
+import { Page } from '@playwright/test';
+import { Input, Modal } from '../core';
 
 /**
  * Save Dataset modal in SQL Lab.
@@ -29,11 +29,10 @@ export class SaveDatasetModal extends Modal {
     super(page, '[data-test="Save or Overwrite Dataset-modal"] .ant-modal');
   }
 
-  get nameInput(): Locator {
-    return this.body.locator('input[placeholder="Dataset name"]');
-  }
-
-  get saveAndExploreButton(): Locator {
-    return this.footer.getByRole('button', { name: /Save & Explore/i });
+  get nameInput(): Input {
+    return new Input(
+      this.page,
+      this.body.locator('input[placeholder="Dataset name"]'),
+    );
   }
 }
