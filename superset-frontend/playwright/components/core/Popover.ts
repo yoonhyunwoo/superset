@@ -44,8 +44,6 @@ export class Popover {
   }
 
   clickButton(name: string): Promise<void> {
-    return this.locator
-      .getByRole('button', { name, exact: true })
-      .click();
+    return this.locator.getByRole('button', { name, exact: true }).click();
   }
 }

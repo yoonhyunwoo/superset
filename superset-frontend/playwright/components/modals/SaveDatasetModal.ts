@@ -40,5 +40,4 @@ export class SaveDatasetModal extends Modal {
     await this.nameInput.clear();
     await this.nameInput.fill(name);
   }
-
 }
