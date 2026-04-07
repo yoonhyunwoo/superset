@@ -75,7 +75,7 @@ test('re-runs a query and refreshes results', async () => {
     'SELECT 2 AS second_col',
   );
   expectStatus(secondResponse, 200);
-  await sqlLabPage.waitForQueryResults();
+  await sqlLabPage.waitForQueryResults({ expectHeader: 'second_col' });
 
   const secondHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
   expect(secondHeaders.some(h => h.includes('second_col'))).toBe(true);

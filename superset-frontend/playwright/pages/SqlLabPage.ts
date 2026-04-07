@@ -85,30 +85,36 @@ export class SqlLabPage {
    * Waits for the ace editor to be ready before returning.
    *
    * Uses a two-stage check to handle three states correctly:
-   * 1. Empty state (CI): type="card" with 1 placeholder tab, no editor → create tab
+   * 1. Empty state (CI): type="card" with 0 queryEditors, no editor → create tab
    * 2. Loading after reload: real tabs exist, editor hasn't mounted yet → just wait
    * 3. Normal: tabs + editor present → ready immediately
    *
-   * Stage 1 checks editor presence (catches empty + placeholder).
-   * Stage 2 checks tab count to distinguish reload-loading (tabs > 1) from
-   * true empty state (0-1 placeholder tabs) when no editor exists.
+   * Stage 1 checks editor presence (catches empty + loading).
+   * Stage 2 checks the Ant Design tabs type to distinguish real tabs
+   * (type="editable-card") from the empty state (type="card"). The React
+   * source (TabbedSqlEditors) sets type based on queryEditors.length,
+   * so this directly reflects whether persisted tabs exist.
    */
   async ensureEditorReady(): Promise<void> {
     // Page-global check: are there ANY editors in the DOM (any tab)?
     const anyEditor = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
 
     if ((await anyEditor.count()) === 0) {
-      // No editor visible. Check if real tabs exist (loading after reload)
-      // or if this is the empty state (0 tabs or 1 placeholder "Add a new tab").
-      const tabCount = await this.getTabCount();
-      if (tabCount <= 1) {
-        // Empty state or placeholder — click add-tab icon (works in both card modes)
+      // No editor visible. Check if real query editors exist (editable-card)
+      // or if this is the empty state (card type, 0 queryEditors).
+      // type="editable-card" → queryEditors.length > 0 (even 1 real tab).
+      // type="card" → queryEditors.length === 0 (true empty state).
+      const isEditableCard = await this.editorTabs.element.evaluate(el =>
+        el.classList.contains('ant-tabs-editable-card'),
+      );
+      if (!isEditableCard) {
+        // True empty state — click add-tab icon (works in card mode)
         await this.editorTabs.element
           .locator(SqlLabPage.SELECTORS.ADD_TAB_ICON)
           .first()
           .click();
       }
-      // If tabCount > 1: real tabs exist, editor is loading after reload — just wait
+      // If editable-card: real tabs exist, editor is still mounting — just wait
     }
 
     // Wait for the editor in the ACTIVE panel, not page-global .first().
@@ -252,12 +258,21 @@ export class SqlLabPage {
     return responsePromise;
   }
 
-  async waitForQueryResults(options?: { timeout?: number }): Promise<void> {
+  async waitForQueryResults(options?: {
+    timeout?: number;
+    expectHeader?: string;
+  }): Promise<void> {
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
-    await this.getResultsGrid().element.waitFor({
-      state: 'visible',
-      timeout,
-    });
+    const grid = this.getResultsGrid().element;
+    await grid.waitFor({ state: 'visible', timeout });
+    if (options?.expectHeader) {
+      // When re-running a query, the previous grid is already visible.
+      // Wait for the expected header to appear, confirming fresh results rendered.
+      await grid
+        .locator('.ag-header-cell', { hasText: options.expectHeader })
+        .first()
+        .waitFor({ state: 'visible', timeout });
+    }
   }
 
   /**
