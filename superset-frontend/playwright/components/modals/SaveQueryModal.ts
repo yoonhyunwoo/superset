@@ -40,4 +40,8 @@ export class SaveQueryModal extends Modal {
     await this.nameInput.clear();
     await this.nameInput.fill(name);
   }
+
+  async clickSave(): Promise<void> {
+    await this.clickFooterButton('Save');
+  }
 }

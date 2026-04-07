@@ -66,7 +66,7 @@ test('saves a query and loads it from saved queries', async ({
   const savePromise = waitForPost(page, 'api/v1/saved_query/', {
     timeout: TIMEOUT.API_RESPONSE,
   });
-  await saveModal.getFooterButton('Save').click();
+  await saveModal.clickSave();
   const saveResponse = await savePromise;
   expectStatus(saveResponse, 201);
 
@@ -142,7 +142,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   });
 
   // Click "Save & Explore"
-  await saveDatasetModal.getFooterButton('Save & Explore').click();
+  await saveDatasetModal.clickSaveAndExplore();
 
   // Capture dataset ID for cleanup
   const createResponse = await datasetCreatePromise;
