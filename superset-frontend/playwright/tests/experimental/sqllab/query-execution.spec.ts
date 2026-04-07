@@ -19,7 +19,6 @@
 
 import { test, expect } from '@playwright/test';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
-import { waitForPost } from '../../../helpers/api/intercepts';
 import { expectStatus } from '../../../helpers/api/assertions';
 import { TIMEOUT } from '../../../utils/constants';
 
@@ -28,9 +27,7 @@ let sqlLabPage: SqlLabPage;
 test.beforeEach(async ({ page }) => {
   test.setTimeout(TIMEOUT.SLOW_TEST);
   sqlLabPage = new SqlLabPage(page);
-  await sqlLabPage.goto();
-  await sqlLabPage.waitForPageLoad();
-  await sqlLabPage.ensureEditorReady();
+  await sqlLabPage.gotoAndReady();
 });
 
 test('executes a simple SELECT query and displays results', async ({
@@ -39,15 +36,8 @@ test('executes a simple SELECT query and displays results', async ({
   // Verify the left sidebar database selector is visible and interactive (#38833)
   await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
 
-  // Set the query
-  await sqlLabPage.setQuery('SELECT 1 AS test_col');
-
   // Run query and wait for API response
-  const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  const response = await executePromise;
+  const response = await sqlLabPage.executeQuery('SELECT 1 AS test_col');
   expectStatus(response, 200);
 
   // Verify results appear in the AG Grid
@@ -57,14 +47,10 @@ test('executes a simple SELECT query and displays results', async ({
   expect(headers.some(h => h.includes('test_col'))).toBe(true);
 });
 
-test('shows error message for invalid SQL', async ({ page }) => {
-  await sqlLabPage.setQuery('SELECT * FROM a_table_that_does_not_exist_xyz_pw');
-
-  const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  await executePromise;
+test('shows error message for invalid SQL', async () => {
+  await sqlLabPage.executeQuery(
+    'SELECT * FROM a_table_that_does_not_exist_xyz_pw',
+  );
 
   // Wait for error alert to render in south pane
   const errorAlert = sqlLabPage.getErrorAlert();
@@ -75,14 +61,9 @@ test('shows error message for invalid SQL', async ({ page }) => {
   await expect(southPane).toContainText(/error/i);
 });
 
-test('re-runs a query and refreshes results', async ({ page }) => {
+test('re-runs a query and refreshes results', async () => {
   // First query
-  await sqlLabPage.setQuery('SELECT 1 AS first_col');
-  const firstExecute = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  const firstResponse = await firstExecute;
+  const firstResponse = await sqlLabPage.executeQuery('SELECT 1 AS first_col');
   expectStatus(firstResponse, 200);
   await sqlLabPage.waitForQueryResults();
 
@@ -90,12 +71,9 @@ test('re-runs a query and refreshes results', async ({ page }) => {
   expect(firstHeaders.some(h => h.includes('first_col'))).toBe(true);
 
   // Second query (re-run with different SQL)
-  await sqlLabPage.setQuery('SELECT 2 AS second_col');
-  const secondExecute = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  const secondResponse = await secondExecute;
+  const secondResponse = await sqlLabPage.executeQuery(
+    'SELECT 2 AS second_col',
+  );
   expectStatus(secondResponse, 200);
   await sqlLabPage.waitForQueryResults();
 

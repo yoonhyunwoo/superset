@@ -17,11 +17,12 @@
  * under the License.
  */
 
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, Response } from '@playwright/test';
 import { AceEditor } from '../components/core/AceEditor';
 import { AgGrid } from '../components/core/AgGrid';
 import { EditableTabs } from '../components/core/EditableTabs';
 import { Select } from '../components/core/Select';
+import { waitForPost } from '../helpers/api/intercepts';
 import { URL } from '../utils/urls';
 import { TIMEOUT } from '../utils/constants';
 
@@ -66,6 +67,16 @@ export class SqlLabPage {
     // SQL Lab with dev server can be slow on first load (webpack HMR + React hydration)
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
     await this.editorTabs.element.waitFor({ state: 'visible', timeout });
+  }
+
+  /**
+   * Navigate to SQL Lab and wait until the editor is ready.
+   * Convenience method combining goto + waitForPageLoad + ensureEditorReady.
+   */
+  async gotoAndReady(): Promise<void> {
+    await this.goto();
+    await this.waitForPageLoad();
+    await this.ensureEditorReady();
   }
 
   /**
@@ -225,6 +236,20 @@ export class SqlLabPage {
     await this.activePanel
       .locator(SqlLabPage.SELECTORS.RUN_QUERY_BUTTON)
       .click();
+  }
+
+  /**
+   * Sets SQL, runs the query, and waits for the API response.
+   * Returns the raw Response so callers can assert status, skip, or ignore.
+   * Does NOT assert status or wait for results — use the return value.
+   */
+  async executeQuery(sql: string): Promise<Response> {
+    await this.setQuery(sql);
+    const responsePromise = waitForPost(this.page, 'api/v1/sqllab/execute/', {
+      timeout: TIMEOUT.QUERY_EXECUTION,
+    });
+    await this.runQuery();
+    return responsePromise;
   }
 
   async waitForQueryResults(options?: { timeout?: number }): Promise<void> {

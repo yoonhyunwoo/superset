@@ -23,7 +23,10 @@ import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { ExplorePage } from '../../../pages/ExplorePage';
 import { Modal } from '../../../components/core/Modal';
 import { waitForGet, waitForPost } from '../../../helpers/api/intercepts';
-import { expectStatus } from '../../../helpers/api/assertions';
+import {
+  expectStatus,
+  extractIdFromResponse,
+} from '../../../helpers/api/assertions';
 import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../../utils/constants';
 import { URL } from '../../../utils/urls';
@@ -33,9 +36,7 @@ let sqlLabPage: SqlLabPage;
 test.beforeEach(async ({ page }) => {
   test.setTimeout(TIMEOUT.SLOW_TEST);
   sqlLabPage = new SqlLabPage(page);
-  await sqlLabPage.goto();
-  await sqlLabPage.waitForPageLoad();
-  await sqlLabPage.ensureEditorReady();
+  await sqlLabPage.gotoAndReady();
 });
 
 test('saves a query and loads it from saved queries', async ({
@@ -48,14 +49,8 @@ test('saves a query and loads it from saved queries', async ({
   // Verify left sidebar is interactive
   await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
 
-  // Set and run query
-  await sqlLabPage.setQuery(queryText);
-
-  const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  await executePromise;
+  // Run query and wait for results
+  await sqlLabPage.executeQuery(queryText);
   await sqlLabPage.waitForQueryResults();
 
   // Open the save query modal
@@ -81,9 +76,7 @@ test('saves a query and loads it from saved queries', async ({
   expectStatus(saveResponse, 201);
 
   // Extract saved query ID for cleanup
-  const saveBody = await saveResponse.json();
-  const savedQueryId: number = saveBody.result?.id ?? saveBody.id;
-  expect(savedQueryId).toBeTruthy();
+  const savedQueryId = await extractIdFromResponse(saveResponse);
   testAssets.trackSavedQuery(savedQueryId);
 
   // Verify the modal closed
@@ -125,17 +118,11 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   // Select database to enable the "Save dataset" toolbar button
   await sqlLabPage.selectDatabase('examples');
 
-  const queryText = 'SELECT 1 AS ds_test_col';
-  await sqlLabPage.setQuery(queryText);
-
-  const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  const executeResponse = await executePromise;
   // SELECT 1 doesn't depend on sample data — a non-200 is a real failure
+  const executeResponse = await sqlLabPage.executeQuery(
+    'SELECT 1 AS ds_test_col',
+  );
   expectStatus(executeResponse, 200);
-
   await sqlLabPage.waitForQueryResults();
 
   // Click "Save dataset" button in the toolbar
@@ -173,9 +160,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
 
   // Capture dataset ID for cleanup
   const createResponse = await datasetCreatePromise;
-  const createBody = await createResponse.json();
-  const datasetId: number = createBody.result?.id ?? createBody.id;
-  expect(datasetId).toBeTruthy();
+  const datasetId = await extractIdFromResponse(createResponse);
   testAssets.trackDataset(datasetId);
 
   // Wait for the new tab with Explore page

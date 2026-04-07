@@ -20,7 +20,6 @@
 import { test, expect } from '@playwright/test';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { ExplorePage } from '../../../pages/ExplorePage';
-import { waitForPost } from '../../../helpers/api/intercepts';
 import { TIMEOUT } from '../../../utils/constants';
 
 test('should navigate to Explore from SQL Lab query results', async ({
@@ -28,22 +27,14 @@ test('should navigate to Explore from SQL Lab query results', async ({
 }) => {
   test.setTimeout(TIMEOUT.SLOW_TEST);
   const sqlLabPage = new SqlLabPage(page);
-  await sqlLabPage.goto();
-  await sqlLabPage.waitForPageLoad();
-  await sqlLabPage.ensureEditorReady();
+  await sqlLabPage.gotoAndReady();
 
   // Select database via left sidebar — this triggers the database list API fetch
   // which populates the Redux store with allows_subquery (needed for Create chart button)
   await sqlLabPage.selectDatabase('examples');
 
   const query = 'SELECT gender, name FROM birth_names';
-  await sqlLabPage.setQuery(query);
-
-  const executePromise = waitForPost(page, 'api/v1/sqllab/execute/', {
-    timeout: TIMEOUT.QUERY_EXECUTION,
-  });
-  await sqlLabPage.runQuery();
-  const executeResponse = await executePromise;
+  const executeResponse = await sqlLabPage.executeQuery(query);
 
   // Skip test if birth_names table doesn't exist (sample data not loaded)
   if (executeResponse.status() !== 200) {

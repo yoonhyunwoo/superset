@@ -27,9 +27,7 @@ let sqlLabPage: SqlLabPage;
 test.beforeEach(async ({ page }) => {
   test.setTimeout(TIMEOUT.SLOW_TEST);
   sqlLabPage = new SqlLabPage(page);
-  await sqlLabPage.goto();
-  await sqlLabPage.waitForPageLoad();
-  await sqlLabPage.ensureEditorReady();
+  await sqlLabPage.gotoAndReady();
 });
 
 test('creates a new tab via button', async () => {
