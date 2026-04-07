@@ -20,7 +20,9 @@
 import { Page, Locator, Response } from '@playwright/test';
 import { AceEditor } from '../components/core/AceEditor';
 import { AgGrid } from '../components/core/AgGrid';
+import { Button } from '../components/core/Button';
 import { EditableTabs } from '../components/core/EditableTabs';
+import { Popover } from '../components/core/Popover';
 import { Select } from '../components/core/Select';
 import { waitForPost } from '../helpers/api/intercepts';
 import { URL } from '../utils/urls';
@@ -166,27 +168,40 @@ export class SqlLabPage {
     return this.resultsPane.locator('.ant-alert-error');
   }
 
-  get databaseSelector(): Locator {
-    return this.page.locator(
-      `${SqlLabPage.SELECTORS.LEFT_BAR} ${SqlLabPage.SELECTORS.DATABASE_SELECTOR}`,
+  get databaseSelector(): Button {
+    return new Button(
+      this.page,
+      this.page.locator(
+        `${SqlLabPage.SELECTORS.LEFT_BAR} ${SqlLabPage.SELECTORS.DATABASE_SELECTOR}`,
+      ),
     );
   }
 
-  get runQueryButton(): Locator {
-    return this.activePanel.locator(SqlLabPage.SELECTORS.RUN_QUERY_BUTTON);
+  get runQueryButton(): Button {
+    return new Button(
+      this.page,
+      this.activePanel.locator(SqlLabPage.SELECTORS.RUN_QUERY_BUTTON),
+    );
   }
 
-  get saveButton(): Locator {
-    return this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_BUTTON);
+  get saveButton(): Button {
+    return new Button(
+      this.page,
+      this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_BUTTON),
+    );
   }
 
-  get saveDatasetButton(): Locator {
-    return this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON);
+  get saveDatasetButton(): Button {
+    return new Button(
+      this.page,
+      this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON),
+    );
   }
 
-  get createChartButton(): Locator {
-    return this.activePanel.locator(
-      SqlLabPage.SELECTORS.EXPLORE_RESULTS_BUTTON,
+  get createChartButton(): Button {
+    return new Button(
+      this.page,
+      this.activePanel.locator(SqlLabPage.SELECTORS.EXPLORE_RESULTS_BUTTON),
     );
   }
 
@@ -247,29 +262,23 @@ export class SqlLabPage {
   // ── Database Selection (Left Sidebar) ──
 
   async selectDatabase(dbName: string): Promise<void> {
-    // Click the DatabaseSelector in sqlLabMode to open the popover
     await this.databaseSelector.click();
 
-    // Wait for the popover to appear
-    const popover = this.page.locator('.ant-popover-content');
-    await popover.waitFor({ state: 'visible' });
+    const popover = new Popover(this.page);
+    await popover.waitForVisible();
 
-    // Inside the popover, select the database from the dropdown.
     // Target the .ant-select wrapper (not the combobox input) because the
     // selection-item overlay intercepts pointer events on the input.
-    const dbSelect = popover
+    const dbSelect = popover.element
       .locator(SqlLabPage.SELECTORS.DATABASE_SELECTOR)
       .locator('.ant-select')
       .first();
-    const popoverSelector = new Select(this.page, dbSelect);
-    await popoverSelector.selectOption(dbName);
+    const select = new Select(this.page, dbSelect);
+    await select.selectOption(dbName);
 
-    // Click the "Select" button to confirm
-    await popover.getByRole('button', { name: 'Select', exact: true }).click();
-
-    // Wait for popover to close
+    await popover.clickButton('Select');
     await popover
-      .waitFor({ state: 'hidden', timeout: TIMEOUT.UI_TRANSITION })
+      .waitForHidden({ timeout: TIMEOUT.UI_TRANSITION })
       .catch(() => {});
   }
 

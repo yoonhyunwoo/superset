@@ -48,7 +48,7 @@ test('saves a query and loads it from saved queries', async ({
   const savedQueryTitle = `pw_test_saved_query_${Date.now()}`;
 
   // Verify left sidebar is interactive
-  await expect(sqlLabPage.databaseSelector).toBeVisible();
+  await expect(sqlLabPage.databaseSelector.element).toBeVisible();
 
   // Run query and wait for results
   await sqlLabPage.executeQuery(queryText);

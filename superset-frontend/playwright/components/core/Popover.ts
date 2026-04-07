@@ -17,19 +17,35 @@
  * under the License.
  */
 
-// Core Playwright Components for Superset
-export { AceEditor } from './AceEditor';
-export { AgGrid } from './AgGrid';
-export { Button } from './Button';
-export { Checkbox } from './Checkbox';
-export { EditableTabs } from './EditableTabs';
-export { Form } from './Form';
-export { Input } from './Input';
-export { Menu } from './Menu';
-export { Modal } from './Modal';
-export { Popover } from './Popover';
-export { Select } from './Select';
-export { Table } from './Table';
-export { Tabs } from './Tabs';
-export { Textarea } from './Textarea';
-export { Toast } from './Toast';
+import { Locator, Page } from '@playwright/test';
+
+/**
+ * Ant Design Popover component.
+ */
+export class Popover {
+  readonly page: Page;
+  private readonly locator: Locator;
+
+  constructor(page: Page, locator?: Locator) {
+    this.page = page;
+    this.locator = locator ?? page.locator('.ant-popover-content');
+  }
+
+  get element(): Locator {
+    return this.locator;
+  }
+
+  async waitForVisible(options?: { timeout?: number }): Promise<void> {
+    await this.locator.waitFor({ state: 'visible', ...options });
+  }
+
+  async waitForHidden(options?: { timeout?: number }): Promise<void> {
+    await this.locator.waitFor({ state: 'hidden', ...options });
+  }
+
+  clickButton(name: string): Promise<void> {
+    return this.locator
+      .getByRole('button', { name, exact: true })
+      .click();
+  }
+}

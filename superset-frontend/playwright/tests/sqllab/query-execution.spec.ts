@@ -34,7 +34,7 @@ test('executes a simple SELECT query and displays results', async ({
   page,
 }) => {
   // Verify the left sidebar database selector is visible and interactive (#38833)
-  await expect(sqlLabPage.databaseSelector).toBeVisible();
+  await expect(sqlLabPage.databaseSelector.element).toBeVisible();
 
   // Run query and wait for API response
   const response = await sqlLabPage.executeQuery('SELECT 1 AS test_col');
