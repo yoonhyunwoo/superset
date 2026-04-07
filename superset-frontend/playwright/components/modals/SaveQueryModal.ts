@@ -17,12 +17,23 @@
  * under the License.
  */
 
-// Specific modal implementations
-export { ChartPropertiesModal } from './ChartPropertiesModal';
-export { ConfirmDialog } from './ConfirmDialog';
-export { DeleteConfirmationModal } from './DeleteConfirmationModal';
-export { DuplicateDatasetModal } from './DuplicateDatasetModal';
-export { EditDatasetModal } from './EditDatasetModal';
-export { ImportDatasetModal } from './ImportDatasetModal';
-export { SaveDatasetModal } from './SaveDatasetModal';
-export { SaveQueryModal } from './SaveQueryModal';
+import { Locator, Page } from '@playwright/test';
+import { Modal } from '../core';
+
+/**
+ * Save Query modal in SQL Lab.
+ * Appears when clicking the Save button in the SQL editor toolbar.
+ */
+export class SaveQueryModal extends Modal {
+  constructor(page: Page) {
+    super(page, '.save-query-modal');
+  }
+
+  get nameInput(): Locator {
+    return this.body.locator('input[type="text"]').first();
+  }
+
+  get saveButton(): Locator {
+    return this.footer.getByRole('button', { name: 'Save', exact: true });
+  }
+}

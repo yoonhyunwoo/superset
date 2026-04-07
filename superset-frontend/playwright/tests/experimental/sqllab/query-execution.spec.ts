@@ -34,7 +34,7 @@ test('executes a simple SELECT query and displays results', async ({
   page,
 }) => {
   // Verify the left sidebar database selector is visible and interactive (#38833)
-  await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
+  await expect(sqlLabPage.databaseSelector).toBeVisible();
 
   // Run query and wait for API response
   const response = await sqlLabPage.executeQuery('SELECT 1 AS test_col');
@@ -42,7 +42,7 @@ test('executes a simple SELECT query and displays results', async ({
 
   // Verify results appear in the AG Grid
   await sqlLabPage.waitForQueryResults();
-  const grid = sqlLabPage.getResultsGrid();
+  const grid = sqlLabPage.resultsGrid;
   const headers = await grid.getHeaderTexts();
   expect(headers.some(h => h.includes('test_col'))).toBe(true);
 });
@@ -53,11 +53,11 @@ test('shows error message for invalid SQL', async () => {
   );
 
   // Wait for error alert to render in south pane
-  const errorAlert = sqlLabPage.getErrorAlert();
+  const { errorAlert } = sqlLabPage;
   await expect(errorAlert).toBeVisible({ timeout: TIMEOUT.QUERY_EXECUTION });
 
   // Verify the south pane contains an error indicator (engine-agnostic)
-  const southPane = sqlLabPage.getResultsPane();
+  const southPane = sqlLabPage.resultsPane;
   await expect(southPane).toContainText(/error/i);
 });
 
@@ -67,7 +67,7 @@ test('re-runs a query and refreshes results', async () => {
   expectStatus(firstResponse, 200);
   await sqlLabPage.waitForQueryResults();
 
-  const firstHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
+  const firstHeaders = await sqlLabPage.resultsGrid.getHeaderTexts();
   expect(firstHeaders.some(h => h.includes('first_col'))).toBe(true);
 
   // Second query (re-run with different SQL)
@@ -77,7 +77,7 @@ test('re-runs a query and refreshes results', async () => {
   expectStatus(secondResponse, 200);
   await sqlLabPage.waitForQueryResults({ expectHeader: 'second_col' });
 
-  const secondHeaders = await sqlLabPage.getResultsGrid().getHeaderTexts();
+  const secondHeaders = await sqlLabPage.resultsGrid.getHeaderTexts();
   expect(secondHeaders.some(h => h.includes('second_col'))).toBe(true);
   expect(secondHeaders.some(h => h.includes('first_col'))).toBe(false);
 });

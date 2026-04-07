@@ -123,7 +123,7 @@ export class SqlLabPage {
     await this.activePanel
       .locator(SqlLabPage.SELECTORS.ACE_EDITOR)
       .waitFor({ state: 'visible' });
-    await this.getEditor().waitForReady();
+    await this.editor.waitForReady();
   }
 
   // ── Active Tab Panel ──
@@ -140,21 +140,64 @@ export class SqlLabPage {
       .filter({ has: this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR) });
   }
 
-  // ── Editor ──
+  // ── Elements ──
 
-  getEditor(): AceEditor {
+  get editor(): AceEditor {
     return new AceEditor(
       this.page,
       this.activePanel.locator(SqlLabPage.SELECTORS.ACE_EDITOR),
     );
   }
 
+  get resultsGrid(): AgGrid {
+    return new AgGrid(
+      this.page,
+      this.activePanel
+        .locator(SqlLabPage.SELECTORS.SOUTH_PANE)
+        .locator('[role="grid"]'),
+    );
+  }
+
+  get resultsPane(): Locator {
+    return this.activePanel.locator(SqlLabPage.SELECTORS.SOUTH_PANE);
+  }
+
+  get errorAlert(): Locator {
+    return this.resultsPane.locator('.ant-alert-error');
+  }
+
+  get databaseSelector(): Locator {
+    return this.page.locator(
+      `${SqlLabPage.SELECTORS.LEFT_BAR} ${SqlLabPage.SELECTORS.DATABASE_SELECTOR}`,
+    );
+  }
+
+  get runQueryButton(): Locator {
+    return this.activePanel.locator(SqlLabPage.SELECTORS.RUN_QUERY_BUTTON);
+  }
+
+  get saveButton(): Locator {
+    return this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_BUTTON);
+  }
+
+  get saveDatasetButton(): Locator {
+    return this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON);
+  }
+
+  get createChartButton(): Locator {
+    return this.activePanel.locator(
+      SqlLabPage.SELECTORS.EXPLORE_RESULTS_BUTTON,
+    );
+  }
+
+  // ── Editor Convenience ──
+
   async setQuery(sql: string): Promise<void> {
-    await this.getEditor().setText(sql);
+    await this.editor.setText(sql);
   }
 
   async getQuery(): Promise<string> {
-    return this.getEditor().getText();
+    return this.editor.getText();
   }
 
   // ── Tab Management ──
@@ -201,11 +244,7 @@ export class SqlLabPage {
 
   async selectDatabase(dbName: string): Promise<void> {
     // Click the DatabaseSelector in sqlLabMode to open the popover
-    await this.page
-      .locator(
-        `${SqlLabPage.SELECTORS.LEFT_BAR} ${SqlLabPage.SELECTORS.DATABASE_SELECTOR}`,
-      )
-      .click();
+    await this.databaseSelector.click();
 
     // Wait for the popover to appear
     const popover = this.page.locator('.ant-popover-content');
@@ -230,19 +269,7 @@ export class SqlLabPage {
       .catch(() => {});
   }
 
-  getDatabaseSelectorText(): Locator {
-    return this.page.locator(
-      `${SqlLabPage.SELECTORS.LEFT_BAR} ${SqlLabPage.SELECTORS.DATABASE_SELECTOR}`,
-    );
-  }
-
   // ── Query Execution ──
-
-  async runQuery(): Promise<void> {
-    await this.activePanel
-      .locator(SqlLabPage.SELECTORS.RUN_QUERY_BUTTON)
-      .click();
-  }
 
   /**
    * Sets SQL, runs the query, and waits for the API response.
@@ -254,7 +281,7 @@ export class SqlLabPage {
     const responsePromise = waitForPost(this.page, 'api/v1/sqllab/execute/', {
       timeout: TIMEOUT.QUERY_EXECUTION,
     });
-    await this.runQuery();
+    await this.runQueryButton.click();
     return responsePromise;
   }
 
@@ -263,7 +290,7 @@ export class SqlLabPage {
     expectHeader?: string;
   }): Promise<void> {
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
-    const grid = this.getResultsGrid().element;
+    const grid = this.resultsGrid.element;
     await grid.waitFor({ state: 'visible', timeout });
     if (options?.expectHeader) {
       // When re-running a query, the previous grid is already visible.
@@ -275,27 +302,6 @@ export class SqlLabPage {
     }
   }
 
-  /**
-   * Returns the AG Grid component in the results pane.
-   * Use this to inspect headers, rows, and cell values.
-   */
-  getResultsGrid(): AgGrid {
-    return new AgGrid(
-      this.page,
-      this.activePanel
-        .locator(SqlLabPage.SELECTORS.SOUTH_PANE)
-        .locator('[role="grid"]'),
-    );
-  }
-
-  getResultsPane(): Locator {
-    return this.activePanel.locator(SqlLabPage.SELECTORS.SOUTH_PANE);
-  }
-
-  getErrorAlert(): Locator {
-    return this.getResultsPane().locator('.ant-alert-error');
-  }
-
   // ── Row Limit ──
 
   async getRowLimit(): Promise<string> {
@@ -303,31 +309,5 @@ export class SqlLabPage {
       .locator(SqlLabPage.SELECTORS.LIMIT_DROPDOWN)
       .textContent();
     return text?.trim() ?? '';
-  }
-
-  // ── Save Query ──
-
-  async clickSaveButton(): Promise<void> {
-    await this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_BUTTON).click();
-  }
-
-  // ── Save Dataset ──
-
-  async clickSaveDatasetButton(): Promise<void> {
-    await this.activePanel
-      .locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON)
-      .click();
-  }
-
-  // ── Create Chart ──
-
-  getCreateChartButton(): Locator {
-    return this.activePanel.locator(
-      SqlLabPage.SELECTORS.EXPLORE_RESULTS_BUTTON,
-    );
-  }
-
-  async clickCreateChart(): Promise<void> {
-    await this.getCreateChartButton().click();
   }
 }

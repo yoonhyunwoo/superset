@@ -34,7 +34,7 @@ test('creates a new tab via button', async () => {
   const initialTabCount = await sqlLabPage.getTabCount();
 
   await sqlLabPage.addTab();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
 
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
@@ -52,7 +52,7 @@ test('closes a tab via close button', async () => {
 
   // Create a tab so we have something to close
   await sqlLabPage.addTab();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
   // Close the tab via the × button
@@ -73,12 +73,12 @@ test('preserves query state when switching tabs', async () => {
 
   // Create second tab and set a different query
   await sqlLabPage.addTab();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
   await sqlLabPage.setQuery(tabTwoSql);
 
   // Switch back to first tab and verify its content is preserved
   await sqlLabPage.getTab(firstTabName).click();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
   const firstContent = await sqlLabPage.getQuery();
   expect(firstContent).toContain('tab_one_');
 
@@ -86,7 +86,7 @@ test('preserves query state when switching tabs', async () => {
   const updatedNames = await sqlLabPage.getTabNames();
   const secondTabName = updatedNames[updatedNames.length - 1];
   await sqlLabPage.getTab(secondTabName).click();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
   const secondContent = await sqlLabPage.getQuery();
   expect(secondContent).toContain('tab_two_');
 
@@ -104,7 +104,7 @@ test('should open new tab by keyboard shortcut with correct defaults', async ({
 
   // Open new tab via keyboard shortcut
   await sqlLabPage.addTabByShortcut();
-  await sqlLabPage.getEditor().waitForReady();
+  await sqlLabPage.editor.waitForReady();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
   // Verify new tab has default editor content

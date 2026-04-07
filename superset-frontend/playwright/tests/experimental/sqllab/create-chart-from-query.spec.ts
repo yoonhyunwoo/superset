@@ -60,8 +60,8 @@ test('should navigate to Explore from SQL Lab query results', async ({
 
   // "Create chart" should be enabled when database.allows_subquery is true.
   // If this fails, the database configuration is broken.
-  await expect(sqlLabPage.getCreateChartButton()).toBeEnabled();
-  await sqlLabPage.clickCreateChart();
+  await expect(sqlLabPage.createChartButton).toBeEnabled();
+  await sqlLabPage.createChartButton.click();
 
   // Wait for navigation to Explore page
   const explorePage = new ExplorePage(page);

@@ -21,7 +21,8 @@ import { expect } from '@playwright/test';
 import { test } from '../../../helpers/fixtures/testAssets';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { ExplorePage } from '../../../pages/ExplorePage';
-import { Modal } from '../../../components/core/Modal';
+import { SaveQueryModal } from '../../../components/modals/SaveQueryModal';
+import { SaveDatasetModal } from '../../../components/modals/SaveDatasetModal';
 import { waitForGet, waitForPost } from '../../../helpers/api/intercepts';
 import {
   expectStatus,
@@ -47,31 +48,26 @@ test('saves a query and loads it from saved queries', async ({
   const savedQueryTitle = `pw_test_saved_query_${Date.now()}`;
 
   // Verify left sidebar is interactive
-  await expect(sqlLabPage.getDatabaseSelectorText()).toBeVisible();
+  await expect(sqlLabPage.databaseSelector).toBeVisible();
 
   // Run query and wait for results
   await sqlLabPage.executeQuery(queryText);
   await sqlLabPage.waitForQueryResults();
 
   // Open the save query modal
-  await sqlLabPage.clickSaveButton();
-  const saveModal = new Modal(page, '.save-query-modal');
+  await sqlLabPage.saveButton.click();
+  const saveModal = new SaveQueryModal(page);
   await saveModal.waitForReady();
 
   // Fill in the query name
-  await saveModal.body.locator('input[type="text"]').first().clear();
-  await saveModal.body
-    .locator('input[type="text"]')
-    .first()
-    .fill(savedQueryTitle);
+  await saveModal.nameInput.clear();
+  await saveModal.nameInput.fill(savedQueryTitle);
 
   // Save and intercept the API response
   const savePromise = waitForPost(page, 'api/v1/saved_query/', {
     timeout: TIMEOUT.API_RESPONSE,
   });
-  await saveModal.footer
-    .getByRole('button', { name: 'Save', exact: true })
-    .click();
+  await saveModal.saveButton.click();
   const saveResponse = await savePromise;
   expectStatus(saveResponse, 201);
 
@@ -126,22 +122,16 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   await sqlLabPage.waitForQueryResults();
 
   // Click "Save dataset" button in the toolbar
-  await sqlLabPage.clickSaveDatasetButton();
+  await sqlLabPage.saveDatasetButton.click();
 
   // Wait for the Save Dataset modal
-  const saveDatasetModal = new Modal(
-    page,
-    '[data-test="Save or Overwrite Dataset-modal"] .ant-modal',
-  );
+  const saveDatasetModal = new SaveDatasetModal(page);
   await saveDatasetModal.waitForReady();
 
   // Fill in a unique dataset name
   const datasetName = `pw_test_dataset_${Date.now()}`;
-  const nameInput = saveDatasetModal.body.locator(
-    'input[placeholder="Dataset name"]',
-  );
-  await nameInput.clear();
-  await nameInput.fill(datasetName);
+  await saveDatasetModal.nameInput.clear();
+  await saveDatasetModal.nameInput.fill(datasetName);
 
   // Set up intercepts before clicking save:
   // 1. Dataset creation API
@@ -154,9 +144,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   });
 
   // Click "Save & Explore"
-  await saveDatasetModal.footer
-    .getByRole('button', { name: /Save & Explore/i })
-    .click();
+  await saveDatasetModal.saveAndExploreButton.click();
 
   // Capture dataset ID for cleanup
   const createResponse = await datasetCreatePromise;

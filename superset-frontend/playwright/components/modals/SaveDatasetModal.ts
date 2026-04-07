@@ -17,12 +17,23 @@
  * under the License.
  */
 
-// Specific modal implementations
-export { ChartPropertiesModal } from './ChartPropertiesModal';
-export { ConfirmDialog } from './ConfirmDialog';
-export { DeleteConfirmationModal } from './DeleteConfirmationModal';
-export { DuplicateDatasetModal } from './DuplicateDatasetModal';
-export { EditDatasetModal } from './EditDatasetModal';
-export { ImportDatasetModal } from './ImportDatasetModal';
-export { SaveDatasetModal } from './SaveDatasetModal';
-export { SaveQueryModal } from './SaveQueryModal';
+import { Locator, Page } from '@playwright/test';
+import { Modal } from '../core';
+
+/**
+ * Save Dataset modal in SQL Lab.
+ * Appears when clicking "Save dataset" after running a query.
+ */
+export class SaveDatasetModal extends Modal {
+  constructor(page: Page) {
+    super(page, '[data-test="Save or Overwrite Dataset-modal"] .ant-modal');
+  }
+
+  get nameInput(): Locator {
+    return this.body.locator('input[placeholder="Dataset name"]');
+  }
+
+  get saveAndExploreButton(): Locator {
+    return this.footer.getByRole('button', { name: /Save & Explore/i });
+  }
+}
