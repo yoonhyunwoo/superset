@@ -21,7 +21,8 @@ import { expect } from '@playwright/test';
 import { test } from '../../../helpers/fixtures/testAssets';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { ExplorePage } from '../../../pages/ExplorePage';
-import { waitForPost } from '../../../helpers/api/intercepts';
+import { Modal } from '../../../components/core/Modal';
+import { waitForGet, waitForPost } from '../../../helpers/api/intercepts';
 import { apiGetSavedQuery } from '../../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../../utils/constants';
 import { URL } from '../../../utils/urls';
@@ -58,7 +59,7 @@ test('saves a query and loads it from saved queries', async ({
 
   // Open the save query modal
   await sqlLabPage.clickSaveButton();
-  const saveModal = sqlLabPage.getSaveQueryModal();
+  const saveModal = new Modal(page, '.save-query-modal');
   await saveModal.waitForReady();
 
   // Fill in the query name
@@ -96,9 +97,21 @@ test('saves a query and loads it from saved queries', async ({
   // End-to-end reopen: navigate to SQL Lab with savedQueryId URL param.
   // This exercises the PopEditorTab → popSavedQuery hydration path that
   // the Saved Queries list and home page link to.
+  //
+  // Register the API listener BEFORE navigating so we catch the
+  // GET /api/v1/saved_query/:id that popSavedQuery fires on mount.
+  // Without this, the editor may still contain saved_test_col from the
+  // previous step, making the assertion pass without exercising the
+  // hydration path.
+  const savedQueryHydration = waitForGet(
+    page,
+    `api/v1/saved_query/${savedQueryId}`,
+    { timeout: TIMEOUT.API_RESPONSE },
+  );
   await page.goto(`${URL.SQLLAB}?savedQueryId=${savedQueryId}`, {
     waitUntil: 'domcontentloaded',
   });
+  await savedQueryHydration;
   await sqlLabPage.waitForPageLoad();
   await sqlLabPage.ensureEditorReady();
 
@@ -128,7 +141,10 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
   await sqlLabPage.clickSaveDatasetButton();
 
   // Wait for the Save Dataset modal
-  const saveDatasetModal = sqlLabPage.getSaveDatasetModal();
+  const saveDatasetModal = new Modal(
+    page,
+    '[data-test="Save or Overwrite Dataset-modal"] .ant-modal',
+  );
   await saveDatasetModal.waitForReady();
 
   // Fill in a unique dataset name

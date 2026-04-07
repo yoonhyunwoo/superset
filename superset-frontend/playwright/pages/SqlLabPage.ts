@@ -22,7 +22,6 @@ import { AceEditor } from '../components/core/AceEditor';
 import { AgGrid } from '../components/core/AgGrid';
 import { EditableTabs } from '../components/core/EditableTabs';
 import { Select } from '../components/core/Select';
-import { Modal } from '../components/core/Modal';
 import { URL } from '../utils/urls';
 import { TIMEOUT } from '../utils/constants';
 
@@ -42,7 +41,6 @@ export class SqlLabPage {
     SOUTH_PANE: '[data-test="south-pane"]',
     EXPLORE_RESULTS_BUTTON: '[data-test="explore-results-button"]',
     SAVE_BUTTON: 'button[aria-label="Save"]',
-    SAVE_QUERY_MODAL: '.save-query-modal',
     ACE_EDITOR: '.ace_editor',
     LEFT_BAR: '[data-test="sql-editor-left-bar"]',
     DATABASE_SELECTOR: '[data-test="DatabaseSelector"]',
@@ -273,23 +271,12 @@ export class SqlLabPage {
     await this.activePanel.locator(SqlLabPage.SELECTORS.SAVE_BUTTON).click();
   }
 
-  getSaveQueryModal(): Modal {
-    return new Modal(this.page, SqlLabPage.SELECTORS.SAVE_QUERY_MODAL);
-  }
-
   // ── Save Dataset ──
 
   async clickSaveDatasetButton(): Promise<void> {
     await this.activePanel
       .locator(SqlLabPage.SELECTORS.SAVE_DATASET_BUTTON)
       .click();
-  }
-
-  getSaveDatasetModal(): Modal {
-    return new Modal(
-      this.page,
-      '[data-test="Save or Overwrite Dataset-modal"] .ant-modal',
-    );
   }
 
   // ── Create Chart ──
