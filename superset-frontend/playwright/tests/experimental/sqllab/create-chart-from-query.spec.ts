@@ -26,7 +26,7 @@ import { TIMEOUT } from '../../../utils/constants';
 test('should navigate to Explore from SQL Lab query results', async ({
   page,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(TIMEOUT.SLOW_TEST);
   const sqlLabPage = new SqlLabPage(page);
   await sqlLabPage.goto();
   await sqlLabPage.waitForPageLoad();

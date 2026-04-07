@@ -31,7 +31,7 @@ import { URL } from '../../../utils/urls';
 let sqlLabPage: SqlLabPage;
 
 test.beforeEach(async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(TIMEOUT.SLOW_TEST);
   sqlLabPage = new SqlLabPage(page);
   await sqlLabPage.goto();
   await sqlLabPage.waitForPageLoad();

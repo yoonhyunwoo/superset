@@ -20,11 +20,12 @@
 import { test, expect } from '@playwright/test';
 import { SqlLabPage } from '../../../pages/SqlLabPage';
 import { waitForPost } from '../../../helpers/api/intercepts';
+import { TIMEOUT } from '../../../utils/constants';
 
 let sqlLabPage: SqlLabPage;
 
 test.beforeEach(async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(TIMEOUT.SLOW_TEST);
   sqlLabPage = new SqlLabPage(page);
   await sqlLabPage.goto();
   await sqlLabPage.waitForPageLoad();
