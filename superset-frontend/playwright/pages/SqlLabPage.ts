@@ -346,4 +346,17 @@ export class SqlLabPage {
       .textContent();
     return text?.trim() ?? '';
   }
+
+  /**
+   * Set the row limit via the Limit dropdown in the active panel.
+   * @param limit - The menu item label to select (e.g., "10", "100")
+   */
+  async setRowLimit(limit: string): Promise<void> {
+    await this.activePanel
+      .locator(SqlLabPage.SELECTORS.LIMIT_DROPDOWN)
+      .click();
+    await this.page
+      .getByRole('menuitem', { name: limit, exact: true })
+      .click();
+  }
 }

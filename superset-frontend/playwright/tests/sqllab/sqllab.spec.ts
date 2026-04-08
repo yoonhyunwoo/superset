@@ -152,14 +152,21 @@ test('should open new tab by keyboard shortcut with correct defaults', async ({
 }) => {
   const initialTabCount = await sqlLabPage.getTabCount();
 
+  // Record default row limit, then change it on the current tab
+  const defaultLimit = await sqlLabPage.getRowLimit();
+  await sqlLabPage.setRowLimit('10');
+  expect(await sqlLabPage.getRowLimit()).not.toBe(defaultLimit);
+
   await sqlLabPage.setQuery('some random query string');
 
   await sqlLabPage.addTabByShortcut();
   await sqlLabPage.editor.waitForReady();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
+  // Verify new tab has default SQL AND default row limit (not carried over)
   const defaultContent = await sqlLabPage.getQuery();
   expect(defaultContent).toContain('SELECT');
+  expect(await sqlLabPage.getRowLimit()).toBe(defaultLimit);
 
   const tabStatePromise = waitForPost(page, 'tabstateview');
   await page.locator('body').click();
@@ -213,14 +220,29 @@ test('saves a query and loads it from saved queries', async ({
   expect(savedQuery.sql).toContain('saved_test_col');
   expect(savedQuery.label).toBe(savedQueryTitle);
 
+  // Navigate through the Saved Queries list UI (not deep-link) to verify
+  // the query appears in the list and can be loaded from there.
+  await page.goto(URL.SAVED_QUERIES_LIST, { waitUntil: 'domcontentloaded' });
+  await page.locator('.ant-table').waitFor({
+    state: 'visible',
+    timeout: TIMEOUT.PAGE_LOAD,
+  });
+
+  // Search for the saved query by its unique name
+  const searchInput = page.locator('[data-testid="filters-search"] input');
+  await searchInput.fill(savedQueryTitle);
+
+  // Wait for the filtered row to appear in the table
+  const queryLink = page.getByRole('link', { name: savedQueryTitle });
+  await queryLink.waitFor({ state: 'visible', timeout: TIMEOUT.API_RESPONSE });
+
+  // Click the query name to open it in SQL Lab (exercises the list → SQL Lab path)
   const savedQueryHydration = waitForGet(
     page,
     `api/v1/saved_query/${savedQueryId}`,
     { timeout: TIMEOUT.API_RESPONSE },
   );
-  await page.goto(`${URL.SQLLAB}?savedQueryId=${savedQueryId}`, {
-    waitUntil: 'domcontentloaded',
-  });
+  await queryLink.click();
   await savedQueryHydration;
   await sqlLabPage.waitForPageLoad();
   await sqlLabPage.ensureEditorReady();
