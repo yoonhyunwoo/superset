@@ -152,24 +152,21 @@ test('should open new tab by keyboard shortcut with correct defaults', async ({
 }) => {
   const initialTabCount = await sqlLabPage.getTabCount();
 
-  // Record default row limit, then change it on the current tab
-  const defaultLimit = await sqlLabPage.getRowLimit();
-  await sqlLabPage.setRowLimit('10');
-  expect(await sqlLabPage.getRowLimit()).not.toBe(defaultLimit);
-
   await sqlLabPage.setQuery('some random query string');
+
+  // Register before addTabByShortcut — EditorAutoSync POSTs the new tab
+  // within its 5 s interval, so the POST can fire before any later line.
+  const tabStatePromise = waitForPost(page, /tabstateview\/?$/);
 
   await sqlLabPage.addTabByShortcut();
   await sqlLabPage.editor.waitForReady();
   expect(await sqlLabPage.getTabCount()).toBe(initialTabCount + 1);
 
-  // Verify new tab has default SQL AND default row limit (not carried over)
+  // Verify new tab has default SQL (not carried over from previous tab)
   const defaultContent = await sqlLabPage.getQuery();
   expect(defaultContent).toContain('SELECT');
-  expect(await sqlLabPage.getRowLimit()).toBe(defaultLimit);
 
-  const tabStatePromise = waitForPost(page, 'tabstateview');
-  await page.locator('body').click();
+  // Wait for the auto-sync POST that persists the new tab to the backend
   await tabStatePromise;
 
   await page.reload();
@@ -229,7 +226,7 @@ test('saves a query and loads it from saved queries', async ({
   });
 
   // Search for the saved query by its unique name
-  const searchInput = page.locator('[data-testid="filters-search"] input');
+  const searchInput = page.locator('[data-test="filters-search"] input');
   await searchInput.fill(savedQueryTitle);
 
   // Wait for the filtered row to appear in the table

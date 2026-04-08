@@ -100,6 +100,7 @@ export class SqlLabPage {
   async ensureEditorReady(): Promise<void> {
     // Page-global check: are there ANY editors in the DOM (any tab)?
     const anyEditor = this.page.locator(SqlLabPage.SELECTORS.ACE_EDITOR);
+    let tabSyncPromise: Promise<Response> | null = null;
 
     if ((await anyEditor.count()) === 0) {
       // No editor visible. Check if real query editors exist (editable-card)
@@ -110,6 +111,11 @@ export class SqlLabPage {
         el.classList.contains('ant-tabs-editable-card'),
       );
       if (!isEditableCard) {
+        // Register before clicking — EditorAutoSync POSTs the new tab
+        // within its 5 s interval, so capture it before any await.
+        tabSyncPromise = waitForPost(this.page, /tabstateview\/?$/, {
+          timeout: 10_000,
+        });
         // True empty state — click add-tab icon (works in card mode)
         await this.editorTabs.element
           .locator(SqlLabPage.SELECTORS.ADD_TAB_ICON)
@@ -126,6 +132,13 @@ export class SqlLabPage {
       .locator(SqlLabPage.SELECTORS.ACE_EDITOR)
       .waitFor({ state: 'visible' });
     await this.editor.waitForReady();
+
+    // If we created the initial tab, wait for its backend sync to complete.
+    // This prevents later waitForPost calls from accidentally matching
+    // this tab's creation POST instead of a subsequent tab's.
+    if (tabSyncPromise) {
+      await tabSyncPromise;
+    }
   }
 
   // ── Active Tab Panel ──
@@ -352,11 +365,7 @@ export class SqlLabPage {
    * @param limit - The menu item label to select (e.g., "10", "100")
    */
   async setRowLimit(limit: string): Promise<void> {
-    await this.activePanel
-      .locator(SqlLabPage.SELECTORS.LIMIT_DROPDOWN)
-      .click();
-    await this.page
-      .getByRole('menuitem', { name: limit, exact: true })
-      .click();
+    await this.activePanel.locator(SqlLabPage.SELECTORS.LIMIT_DROPDOWN).click();
+    await this.page.getByRole('menuitem', { name: limit, exact: true }).click();
   }
 }
