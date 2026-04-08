@@ -18,13 +18,14 @@
  */
 
 /**
- * SQL Lab E2E tests — serialized to avoid backend tab-state interference.
+ * SQL Lab E2E tests — sequential via project-level fullyParallel: false.
  *
  * SQL Lab persists tabs per user via /tabstateview/*. With fullyParallel and
- * multiple workers, separate spec files sharing the same authenticated user
- * can overwrite each other's tab/query state, making tab-count and reload
- * assertions nondeterministic. Keeping all SQL Lab tests in one serial file
- * guarantees they run on a single worker in sequence.
+ * multiple workers, tests sharing the same authenticated user can overwrite
+ * each other's tab/query state, making tab-count and reload assertions
+ * nondeterministic. The chromium-sqllab project in playwright.config.ts
+ * sets fullyParallel: false so all tests in this file run sequentially on
+ * one worker — without the skip-on-failure behavior of serial mode.
  */
 
 import { test, expect } from '../../helpers/fixtures/testAssets';
@@ -40,8 +41,6 @@ import {
 import { apiGetSavedQuery } from '../../helpers/api/savedQuery';
 import { TIMEOUT } from '../../utils/constants';
 import { URL } from '../../utils/urls';
-
-test.describe.configure({ mode: 'serial' });
 
 let sqlLabPage: SqlLabPage;
 

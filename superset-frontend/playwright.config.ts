@@ -94,12 +94,27 @@ export default defineConfig({
       name: 'chromium',
       testIgnore: [
         '**/tests/auth/**/*.spec.ts',
+        '**/tests/sqllab/**/*.spec.ts',
         ...(process.env.INCLUDE_EXPERIMENTAL ? [] : ['**/experimental/**']),
       ],
       use: {
         browserName: 'chromium',
         testIdAttribute: 'data-test',
         // Reuse authentication state from global setup (fast E2E tests)
+        storageState: 'playwright/.auth/user.json',
+      },
+    },
+    {
+      // SQL Lab tests share backend tab state per user (/tabstateview/*).
+      // fullyParallel: false ensures all tests run sequentially on one worker
+      // without the skip-on-failure behavior of serial mode — a single test
+      // failure still reports remaining tests independently.
+      name: 'chromium-sqllab',
+      testMatch: '**/tests/sqllab/**/*.spec.ts',
+      fullyParallel: false,
+      use: {
+        browserName: 'chromium',
+        testIdAttribute: 'data-test',
         storageState: 'playwright/.auth/user.json',
       },
     },
