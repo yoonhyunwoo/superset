@@ -279,7 +279,11 @@ export class SqlLabPage {
     await popover.getButton('Select').click();
     await popover
       .waitForHidden({ timeout: TIMEOUT.UI_TRANSITION })
-      .catch(() => {});
+      .catch(error => {
+        if (!(error instanceof Error) || error.name !== 'TimeoutError') {
+          throw error;
+        }
+      });
   }
 
   // ── Query Execution ──

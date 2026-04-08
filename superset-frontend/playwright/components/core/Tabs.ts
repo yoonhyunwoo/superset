@@ -32,7 +32,7 @@ export class Tabs {
 
   constructor(page: Page, locator?: Locator) {
     this.page = page;
-    this.locator = locator ?? page.getByRole('tablist');
+    this.locator = locator ?? page.locator('.ant-tabs').first();
   }
 
   /**

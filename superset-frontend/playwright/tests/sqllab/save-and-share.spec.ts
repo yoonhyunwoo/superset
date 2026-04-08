@@ -151,7 +151,6 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
 
   // Wait for the new tab with Explore page
   const newPage = await newPagePromise;
-  await newPage.waitForLoadState();
 
   const explorePage = new ExplorePage(newPage);
   await explorePage.waitForPageLoad({ timeout: TIMEOUT.PAGE_LOAD });

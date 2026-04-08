@@ -72,7 +72,8 @@ export async function extractIdFromResponse(
 ): Promise<number> {
   const body = await response.json();
   const id: number = body.result?.id ?? body.id;
-  expect(id, 'Response body must contain a numeric id').toBeTruthy();
+  expect(typeof id, 'Response body must contain a numeric id').toBe('number');
+  expect(Number.isNaN(id), 'Response id must not be NaN').toBe(false);
   return id;
 }
 
