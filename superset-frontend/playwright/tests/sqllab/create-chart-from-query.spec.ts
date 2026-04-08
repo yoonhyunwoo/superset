@@ -36,25 +36,7 @@ test('should navigate to Explore from SQL Lab query results', async ({
 
   const query = 'SELECT gender, name FROM birth_names';
   const executeResponse = await sqlLabPage.executeQuery(query);
-
-  // Only skip when the error indicates birth_names is missing (sample data not loaded).
-  // Other non-200 errors (auth, CSRF, 5xx) indicate real regressions and must fail hard.
-  if (executeResponse.status() !== 200) {
-    const body = await executeResponse.json().catch(() => ({}));
-    const errorText = JSON.stringify(body).toLowerCase();
-    if (
-      /birth_names|does not exist|no such table|table or view not found/.test(
-        errorText,
-      )
-    ) {
-      test.skip(
-        true,
-        'birth_names table not available — sample data not loaded',
-      );
-    }
-    // test.skip() throws — this line only runs for non-table-missing errors
-    expectStatus(executeResponse, 200);
-  }
+  expectStatus(executeResponse, 200);
 
   await sqlLabPage.waitForQueryResults();
 

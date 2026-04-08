@@ -276,7 +276,7 @@ export class SqlLabPage {
     const select = new Select(this.page, dbSelect);
     await select.selectOption(dbName);
 
-    await popover.clickButton('Select');
+    await popover.getButton('Select').click();
     await popover
       .waitForHidden({ timeout: TIMEOUT.UI_TRANSITION })
       .catch(() => {});

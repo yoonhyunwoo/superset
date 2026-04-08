@@ -18,6 +18,7 @@
  */
 
 import { Locator, Page } from '@playwright/test';
+import { Button } from './Button';
 
 /**
  * Ant Design Popover component.
@@ -43,7 +44,10 @@ export class Popover {
     await this.locator.waitFor({ state: 'hidden', ...options });
   }
 
-  clickButton(name: string): Promise<void> {
-    return this.locator.getByRole('button', { name, exact: true }).click();
+  getButton(name: string): Button {
+    return new Button(
+      this.page,
+      this.locator.getByRole('button', { name, exact: true }),
+    );
   }
 }
