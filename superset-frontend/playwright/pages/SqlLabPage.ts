@@ -290,23 +290,32 @@ export class SqlLabPage {
 
   /**
    * Sets SQL, runs the query, and waits for the API response.
-   * Returns the raw Response so callers can assert status, skip, or ignore.
-   * Does NOT assert status or wait for results — use the return value.
+   * Also observes the QueryStatusBar (.ant-steps) loading indicator to
+   * confirm the UI entered the execution cycle — this unmounts the old
+   * results grid, so waitForQueryResults() can trust that any grid it
+   * finds afterward contains data from THIS execution.
    */
   async executeQuery(sql: string): Promise<Response> {
     await this.setQuery(sql);
     const responsePromise = waitForPost(this.page, 'api/v1/sqllab/execute/', {
       timeout: TIMEOUT.QUERY_EXECUTION,
     });
+    // Start observing the loading indicator BEFORE clicking Run so we
+    // catch it even for fast queries. QueryStatusBar (.ant-steps) appears
+    // when SQL Lab enters the running state and unmounts the results grid.
+    const loadingStarted = this.resultsPane
+      .locator('.ant-steps')
+      .waitFor({ state: 'visible', timeout: TIMEOUT.QUERY_EXECUTION });
     await this.runQueryButton.click();
-    return responsePromise;
+    const [, response] = await Promise.all([loadingStarted, responsePromise]);
+    return response;
   }
 
   /**
-   * Wait for query results to render in the AG Grid.
+   * Wait for fresh query results to render in the AG Grid.
+   * Waits for the QueryStatusBar to disappear first, proving the execution
+   * cycle completed and React rendered the post-query grid.
    * @param expectHeader - A column header that must be visible before returning.
-   *   Required so callers prove fresh results rendered — with persisted tab state
-   *   a grid from a previous run is already visible and would false-pass.
    * @param options.timeout - How long to wait (default: TIMEOUT.QUERY_EXECUTION)
    */
   async waitForQueryResults(
@@ -314,6 +323,13 @@ export class SqlLabPage {
     options?: { timeout?: number },
   ): Promise<void> {
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
+    // Wait for QueryStatusBar to disappear — proves the loading → ready
+    // transition completed. If already hidden (fast query finished before
+    // this call), resolves immediately since executeQuery() already observed
+    // the loading state appear.
+    await this.resultsPane
+      .locator('.ant-steps')
+      .waitFor({ state: 'hidden', timeout });
     const grid = this.resultsGrid.element;
     await grid.waitFor({ state: 'visible', timeout });
     await grid
