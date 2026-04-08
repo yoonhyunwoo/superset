@@ -58,7 +58,7 @@ test('executes a simple SELECT query and displays results', async () => {
   const response = await sqlLabPage.executeQuery('SELECT 1 AS test_col');
   expectStatus(response, 200);
 
-  await sqlLabPage.waitForQueryResults();
+  await sqlLabPage.waitForQueryResults('test_col');
   const headers = await sqlLabPage.resultsGrid.getHeaderTexts();
   expect(headers.some(h => h.includes('test_col'))).toBe(true);
 });
@@ -77,7 +77,7 @@ test('shows error message for invalid SQL', async () => {
 test('re-runs a query and refreshes results', async () => {
   const firstResponse = await sqlLabPage.executeQuery('SELECT 1 AS first_col');
   expectStatus(firstResponse, 200);
-  await sqlLabPage.waitForQueryResults();
+  await sqlLabPage.waitForQueryResults('first_col');
 
   const firstHeaders = await sqlLabPage.resultsGrid.getHeaderTexts();
   expect(firstHeaders.some(h => h.includes('first_col'))).toBe(true);
@@ -86,7 +86,7 @@ test('re-runs a query and refreshes results', async () => {
     'SELECT 2 AS second_col',
   );
   expectStatus(secondResponse, 200);
-  await sqlLabPage.waitForQueryResults({ expectHeader: 'second_col' });
+  await sqlLabPage.waitForQueryResults('second_col');
 
   const secondHeaders = await sqlLabPage.resultsGrid.getHeaderTexts();
   expect(secondHeaders.some(h => h.includes('second_col'))).toBe(true);
@@ -188,7 +188,7 @@ test('saves a query and loads it from saved queries', async ({
 
   const executeResponse = await sqlLabPage.executeQuery(queryText);
   expectStatus(executeResponse, 200);
-  await sqlLabPage.waitForQueryResults({ expectHeader: 'saved_test_col' });
+  await sqlLabPage.waitForQueryResults('saved_test_col');
 
   await sqlLabPage.saveButton.click();
   const saveModal = new SaveQueryModal(page);
@@ -236,7 +236,7 @@ test('creates a dataset from query results', async ({ page, testAssets }) => {
     'SELECT 1 AS ds_test_col',
   );
   expectStatus(executeResponse, 200);
-  await sqlLabPage.waitForQueryResults();
+  await sqlLabPage.waitForQueryResults('ds_test_col');
 
   await sqlLabPage.saveDatasetButton.click();
 
@@ -281,7 +281,7 @@ test('should navigate to Explore from SQL Lab query results', async ({
   const executeResponse = await sqlLabPage.executeQuery(query);
   expectStatus(executeResponse, 200);
 
-  await sqlLabPage.waitForQueryResults();
+  await sqlLabPage.waitForQueryResults('gender');
 
   await expect(sqlLabPage.createChartButton.element).toBeEnabled();
   await sqlLabPage.createChartButton.click();

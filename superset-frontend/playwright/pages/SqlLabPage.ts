@@ -302,21 +302,24 @@ export class SqlLabPage {
     return responsePromise;
   }
 
-  async waitForQueryResults(options?: {
-    timeout?: number;
-    expectHeader?: string;
-  }): Promise<void> {
+  /**
+   * Wait for query results to render in the AG Grid.
+   * @param expectHeader - A column header that must be visible before returning.
+   *   Required so callers prove fresh results rendered — with persisted tab state
+   *   a grid from a previous run is already visible and would false-pass.
+   * @param options.timeout - How long to wait (default: TIMEOUT.QUERY_EXECUTION)
+   */
+  async waitForQueryResults(
+    expectHeader: string,
+    options?: { timeout?: number },
+  ): Promise<void> {
     const timeout = options?.timeout ?? TIMEOUT.QUERY_EXECUTION;
     const grid = this.resultsGrid.element;
     await grid.waitFor({ state: 'visible', timeout });
-    if (options?.expectHeader) {
-      // When re-running a query, the previous grid is already visible.
-      // Wait for the expected header to appear, confirming fresh results rendered.
-      await grid
-        .locator('.ag-header-cell', { hasText: options.expectHeader })
-        .first()
-        .waitFor({ state: 'visible', timeout });
-    }
+    await grid
+      .locator('.ag-header-cell', { hasText: expectHeader })
+      .first()
+      .waitFor({ state: 'visible', timeout });
   }
 
   // ── Row Limit ──
