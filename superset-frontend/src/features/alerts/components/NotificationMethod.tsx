@@ -469,8 +469,8 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
     setBccValue(bcc);
   }
 
-  if ((payloadTemplate || '') !== payloadTemplateValue) {
-    setPayloadTemplateValue(payloadTemplate || '');
+  if (!!payloadTemplate && payloadTemplateValue !== payloadTemplate) {
+    setPayloadTemplateValue(payloadTemplate);
   }
 
   return (

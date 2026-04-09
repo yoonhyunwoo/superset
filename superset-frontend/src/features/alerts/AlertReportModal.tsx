@@ -876,7 +876,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
             target: setting.recipients,
             ccTarget: setting.cc,
             bccTarget: setting.bcc,
-            payloadTemplate: setting.payloadTemplate?.trim() || undefined,
+            payloadTemplate: setting.payloadTemplate,
           },
           type: setting.method,
         });
