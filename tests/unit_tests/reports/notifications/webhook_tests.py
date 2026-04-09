@@ -126,6 +126,72 @@ def test_get_req_payload_basic(mock_header_data) -> None:
     assert payload["header"]["notification_type"] == "Alert"
 
 
+def test_get_req_payload_uses_template(mock_header_data) -> None:
+    """
+    Test that _get_req_payload renders an optional Jinja payload template.
+    """
+    from superset.reports.models import ReportRecipients, ReportRecipientType
+    from superset.reports.notifications.base import NotificationContent
+
+    content = NotificationContent(
+        name="Payload Name",
+        header_data=mock_header_data,
+        description="Payload Description",
+        url="https://example.com/report",
+    )
+    webhook_notification = WebhookNotification(
+        recipient=ReportRecipients(
+            type=ReportRecipientType.WEBHOOK,
+            recipient_config_json=(
+                '{"target": "https://webhook.com", '
+                '"payloadTemplate": '
+                '"{\\"title\\": \\"{{ name }}\\", \\"meta\\": '
+                '{\\"format\\": \\"{{ header.notification_format }}\\"}, '
+                '\\"has_pdf\\": {{ has_pdf }}}"}'
+            ),
+        ),
+        content=content,
+    )
+
+    payload = webhook_notification._get_req_payload()
+
+    assert payload == {
+        "title": "Payload Name",
+        "meta": {"format": "PNG"},
+        "has_pdf": False,
+    }
+
+
+def test_get_req_payload_rejects_non_object_template(mock_header_data) -> None:
+    """
+    Test that payload templates must render to a JSON object.
+    """
+    from superset.reports.models import ReportRecipients, ReportRecipientType
+    from superset.reports.notifications.base import NotificationContent
+
+    content = NotificationContent(
+        name="Payload Name",
+        header_data=mock_header_data,
+        description="Payload Description",
+    )
+    webhook_notification = WebhookNotification(
+        recipient=ReportRecipients(
+            type=ReportRecipientType.WEBHOOK,
+            recipient_config_json=(
+                '{"target": "https://webhook.com", '
+                '"payloadTemplate": \'"just-a-string"\' }'
+            ),
+        ),
+        content=content,
+    )
+
+    with pytest.raises(
+        NotificationParamException,
+        match="Webhook payload template must render to a JSON object",
+    ):
+        webhook_notification._get_req_payload()
+
+
 def test_get_files_includes_all_content_types(mock_header_data) -> None:
     """
     Test that _get_files correctly includes csv, pdf, and multiple screenshot attachments

@@ -113,6 +113,7 @@ const TRANSLATIONS = {
   EMAIL_SUBJECT_ERROR_TEXT: t(
     'Please enter valid text. Spaces alone are not permitted.',
   ),
+  WEBHOOK_PAYLOAD_TEMPLATE_NAME: t('Webhook payload template (optional)'),
 };
 
 interface NotificationMethodProps {
@@ -200,9 +201,12 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
   defaultSubject,
   setErrorSubject,
 }) => {
-  const { method, recipients, cc, bcc, options } = setting || {};
+  const { method, recipients, cc, bcc, payloadTemplate, options } = setting || {};
   const [recipientValue, setRecipientValue] = useState<string>(
     recipients || '',
+  );
+  const [payloadTemplateValue, setPayloadTemplateValue] = useState<string>(
+    payloadTemplate || '',
   );
   const [slackRecipients, setSlackRecipients] = useState<
     { label: string; value: string }[]
@@ -242,6 +246,7 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
         recipients: '',
         cc: '',
         bcc: '',
+        payloadTemplate: '',
       };
 
       onUpdate(index, updatedSetting);
@@ -419,6 +424,23 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
     }
   };
 
+  const onPayloadTemplateChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const { target } = event;
+
+    setPayloadTemplateValue(target.value);
+
+    if (onUpdate) {
+      const updatedSetting = {
+        ...setting,
+        payloadTemplate: target.value,
+      };
+
+      onUpdate(index, updatedSetting);
+    }
+  };
+
   const onBccChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { target } = event;
 
@@ -445,6 +467,10 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
 
   if (!!bcc && bccValue !== bcc) {
     setBccValue(bcc);
+  }
+
+  if ((payloadTemplate || '') !== payloadTemplateValue) {
+    setPayloadTemplateValue(payloadTemplate || '');
   }
 
   return (
@@ -569,24 +595,52 @@ export const NotificationMethod: FunctionComponent<NotificationMethodProps> = ({
               </StyledInputContainer>
             </div>
           ) : (
-            <div className="inline-container">
-              <StyledInputContainer>
-                <div className="control-label">
-                  {t('%s URL', method)}
-                  <span className="required">*</span>
-                </div>
-                <div>
+            <>
+              <div className="inline-container">
+                <StyledInputContainer>
+                  <div className="control-label">
+                    {t('%s URL', method)}
+                    <span className="required">*</span>
+                  </div>
+                  <div>
+                    <div className="input-container">
+                      <Input
+                        name="To"
+                        data-test="recipients"
+                        value={recipientValue}
+                        onChange={onRecipientsChange}
+                      />
+                    </div>
+                  </div>
+                </StyledInputContainer>
+              </div>
+              <div className="inline-container">
+                <StyledInputContainer>
+                  <div className="control-label">
+                    {TRANSLATIONS.WEBHOOK_PAYLOAD_TEMPLATE_NAME}
+                  </div>
                   <div className="input-container">
-                    <Input
-                      name="To"
-                      data-test="recipients"
-                      value={recipientValue}
-                      onChange={onRecipientsChange}
+                    <Input.TextArea
+                      name="payloadTemplate"
+                      data-test="webhook-payload-template"
+                      value={payloadTemplateValue}
+                      onChange={onPayloadTemplateChange}
+                      autoSize={{ minRows: 4, maxRows: 12 }}
+                      placeholder={t(
+                        '{"name":"{{ name }}","url":"{{ url }}","has_csv":{{ has_csv }}}',
+                      )}
                     />
                   </div>
-                </div>
-              </StyledInputContainer>
-            </div>
+                  <div className="input-container">
+                    <div className="helper">
+                      {t(
+                        'Use a Jinja JSON object. Available variables: name, description, text, url, header, has_csv, has_pdf, has_screenshots.',
+                      )}
+                    </div>
+                  </div>
+                </StyledInputContainer>
+              </div>
+            </>
           )}
           {method === NotificationMethodOption.Email && (
             <StyledInputContainer>

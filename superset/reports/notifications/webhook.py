@@ -22,6 +22,9 @@ from urllib.parse import urlparse
 import backoff
 import requests
 from flask import current_app
+from jinja2 import StrictUndefined
+from jinja2.exceptions import TemplateError
+from jinja2.sandbox import SandboxedEnvironment
 
 from superset import feature_flag_manager
 from superset.reports.models import ReportRecipientType
@@ -42,6 +45,16 @@ class WebhookNotification(BaseNotification):
     """
 
     type = ReportRecipientType.WEBHOOK
+    _payload_template_env = SandboxedEnvironment(undefined=StrictUndefined)
+
+    def _get_webhook_config(self) -> dict[str, Any]:
+        try:
+            config = json.loads(self._recipient.recipient_config_json)
+        except (json.JSONDecodeError, TypeError) as ex:
+            raise NotificationParamException("Webhook URL is required") from ex
+        if not isinstance(config, dict):
+            raise NotificationParamException("Webhook URL is required")
+        return config
 
     def _get_webhook_url(self) -> str:
         """
@@ -50,13 +63,20 @@ class WebhookNotification(BaseNotification):
         :raises NotificationParamException: If the webhook URL is not provided in the recipient configuration
         """  # noqa: E501
         try:
-            cfg = json.loads(self._recipient.recipient_config_json)
-            target = cfg.get("target") if isinstance(cfg, dict) else None
+            cfg = self._get_webhook_config()
+            target = cfg.get("target")
             if not target:
                 raise NotificationParamException("Webhook URL is required")
             return target
-        except (json.JSONDecodeError, KeyError, TypeError) as ex:
+        except (KeyError, TypeError) as ex:
             raise NotificationParamException("Webhook URL is required") from ex
+
+    def _get_payload_template(self) -> str | None:
+        template = self._get_webhook_config().get("payloadTemplate")
+        if not isinstance(template, str):
+            return None
+        template = template.strip()
+        return template or None
 
     def _get_req_payload(self) -> dict[str, Any]:
         header_content = {
@@ -73,7 +93,34 @@ class WebhookNotification(BaseNotification):
             "description": self._content.description,
             "url": self._content.url,
         }
-        return content
+        payload_template = self._get_payload_template()
+        if not payload_template:
+            return content
+
+        try:
+            rendered_payload = self._payload_template_env.from_string(
+                payload_template
+            ).render(
+                name=self._content.name,
+                description=self._content.description,
+                text=self._content.text,
+                url=self._content.url,
+                header=header_content,
+                has_csv=bool(self._content.csv),
+                has_pdf=bool(self._content.pdf),
+                has_screenshots=bool(self._content.screenshots),
+            )
+            payload = json.loads(rendered_payload)
+        except (TemplateError, json.JSONDecodeError, TypeError) as ex:
+            raise NotificationParamException(
+                f"Webhook payload template is invalid: {str(ex)}"
+            ) from ex
+
+        if not isinstance(payload, dict):
+            raise NotificationParamException(
+                "Webhook payload template must render to a JSON object."
+            )
+        return payload
 
     def _get_files(self) -> list[tuple[str, tuple[str, bytes, str]]]:
         files = []

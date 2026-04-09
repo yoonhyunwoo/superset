@@ -59,6 +59,7 @@ export type NotificationSetting = {
   recipients: string;
   cc?: string;
   bcc?: string;
+  payloadTemplate?: string;
   options: NotificationMethodOption[];
 };
 
@@ -80,6 +81,7 @@ export type Recipient = {
     target: string;
     ccTarget?: string;
     bccTarget?: string;
+    payloadTemplate?: string;
   };
   type: NotificationMethodOption;
 };

@@ -39,7 +39,7 @@ jest.mock('@superset-ui/core', () => ({
 
 jest.mock('src/features/databases/state.ts', () => ({
   useCommonConf: () => ({
-    ALERT_REPORTS_NOTIFICATION_METHODS: ['Email', 'Slack', 'SlackV2'],
+    ALERT_REPORTS_NOTIFICATION_METHODS: ['Email', 'Slack', 'SlackV2', 'Webhook'],
   }),
 }));
 
@@ -1581,6 +1581,86 @@ test('create mode defaults to dashboard content type with chart null', async () 
   expect(
     screen.queryByRole('combobox', { name: /chart/i }),
   ).not.toBeInTheDocument();
+});
+
+test('create mode includes webhook payload template in recipient config', async () => {
+  const onAdd = jest.fn();
+
+  fetchMock.post(
+    'glob:*/api/v1/report/*',
+    {
+      id: 100,
+      result: { id: 100 },
+    },
+    { name: 'create-webhook-post' },
+  );
+
+  render(
+    <AlertReportModal
+      {...generateMockedProps(true, false, false)}
+      onAdd={onAdd}
+      show
+      isReport
+    />,
+    { useRedux: true },
+  );
+
+  fireEvent.change(screen.getByPlaceholderText(/enter report name/i), {
+    target: { value: 'Webhook Template Report' },
+  });
+
+  userEvent.click(screen.getByTestId('contents-panel'));
+  await screen.findByRole('combobox', { name: /select content type/i });
+
+  const contentTypeSelect = screen.getByRole('combobox', {
+    name: /select content type/i,
+  });
+  userEvent.click(contentTypeSelect);
+  userEvent.click(await screen.findByText('Chart'));
+
+  const chartSelect = await screen.findByRole('combobox', {
+    name: /chart/i,
+  });
+  userEvent.type(chartSelect, 'table');
+  userEvent.click(await screen.findByText('table chart'));
+
+  userEvent.click(screen.getByTestId('notification-method-panel'));
+  await comboboxSelect(
+    screen.getByRole('combobox', { name: /delivery method/i }),
+    'Webhook',
+    () => screen.getByText('Webhook payload template (optional)'),
+  );
+
+  fireEvent.change(await screen.findByTestId('recipients'), {
+    target: { value: 'https://example.com/webhook' },
+  });
+  fireEvent.change(screen.getByTestId('webhook-payload-template'), {
+    target: { value: '{"title":"{{ name }}"}' },
+  });
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled();
+  });
+
+  userEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+  await waitFor(() => {
+    const calls = fetchMock.callHistory.calls('create-webhook-post');
+    expect(calls.length).toBeGreaterThan(0);
+  });
+
+  const calls = fetchMock.callHistory.calls('create-webhook-post');
+  const body = JSON.parse(calls[0].options.body as string);
+
+  expect(body.recipients[0].type).toBe('Webhook');
+  expect(body.recipients[0].recipient_config_json.target).toBe(
+    'https://example.com/webhook',
+  );
+  expect(body.recipients[0].recipient_config_json.payloadTemplate).toBe(
+    '{"title":"{{ name }}"}',
+  );
+
+  fetchMock.removeRoute('create-webhook-post');
 });
 
 test('dashboard content type submits dashboard id and null chart', async () => {

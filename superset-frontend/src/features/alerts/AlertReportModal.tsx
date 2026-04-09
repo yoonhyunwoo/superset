@@ -629,6 +629,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       ...notificationSettings,
       {
         recipients: '',
+        payloadTemplate: '',
         // options shown in the newly added notification method
         options: allowedNotificationMethods.filter(
           // are filtered such that
@@ -875,6 +876,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
             target: setting.recipients,
             ccTarget: setting.cc,
             bccTarget: setting.bcc,
+            payloadTemplate: setting.payloadTemplate?.trim() || undefined,
           },
           type: setting.method,
         });
@@ -1933,6 +1935,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
           options: allowedNotificationMethods,
           cc: config.ccTarget || '',
           bcc: config.bccTarget || '',
+          payloadTemplate: config.payloadTemplate || '',
         };
       });
 

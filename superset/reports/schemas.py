@@ -31,6 +31,10 @@ from superset.reports.models import (
     ReportScheduleType,
     ReportScheduleValidatorType,
 )
+from superset.utils.jinja_template_validator import (
+    JinjaValidationError,
+    validate_jinja_template,
+)
 
 openapi_spec_methods_override = {
     "get": {"get": {"summary": "Get a report schedule"}},
@@ -128,6 +132,7 @@ class ReportRecipientConfigJSONSchema(Schema):
     target = fields.String()
     ccTarget = fields.String()  # noqa: N815
     bccTarget = fields.String()  # noqa: N815
+    payloadTemplate = fields.String()  # noqa: N815
 
 
 class ReportRecipientSchema(Schema):
@@ -144,6 +149,21 @@ class ReportRecipientSchema(Schema):
     @validates_schema
     def validate_email_recipients(self, data: dict[str, Any], **kwargs: Any) -> None:
         if data.get("type") != ReportRecipientType.EMAIL.value:
+            if data.get("type") == ReportRecipientType.WEBHOOK.value:
+                payload_template = (data.get("recipient_config_json") or {}).get(
+                    "payloadTemplate"
+                )
+                if payload_template:
+                    try:
+                        validate_jinja_template(payload_template)
+                    except JinjaValidationError as ex:
+                        raise ValidationError(
+                            {
+                                "payloadTemplate": [
+                                    f"Invalid webhook payload template: {ex.message}"
+                                ]
+                            }
+                        ) from ex
             return
 
         config = data.get("recipient_config_json") or {}

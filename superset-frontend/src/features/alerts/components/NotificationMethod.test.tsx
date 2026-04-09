@@ -62,11 +62,19 @@ const mockSettingSlackV2: NotificationSetting = {
   ],
 };
 
+const mockSettingWebhook: NotificationSetting = {
+  method: NotificationMethodOption.Webhook,
+  recipients: 'https://example.com/webhook',
+  payloadTemplate: '{"message":"{{ name }}"}',
+  options: [NotificationMethodOption.Email, NotificationMethodOption.Webhook],
+};
+
 // eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
 describe('NotificationMethod', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     cleanup();
+    window.featureFlags = {};
   });
 
   test('should render the component', () => {
@@ -157,6 +165,56 @@ describe('NotificationMethod', () => {
     expect(mockOnUpdate).toHaveBeenCalledWith(0, {
       ...mockSetting,
       recipients: 'test1@example.com',
+    });
+  });
+
+  test('renders webhook payload template input when webhook is selected', () => {
+    window.featureFlags = { [FeatureFlag.AlertReportWebhook]: true };
+
+    render(
+      <NotificationMethod
+        setting={mockSettingWebhook}
+        index={0}
+        onUpdate={mockOnUpdate}
+        onRemove={mockOnRemove}
+        onInputChange={mockOnInputChange}
+        email_subject={mockEmailSubject}
+        defaultSubject={mockDefaultSubject}
+        setErrorSubject={mockSetErrorSubject}
+      />,
+    );
+
+    expect(
+      screen.getByText('Webhook payload template (optional)'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('webhook-payload-template')).toHaveValue(
+      '{"message":"{{ name }}"}',
+    );
+  });
+
+  test('updates webhook payload template when textarea changes', () => {
+    window.featureFlags = { [FeatureFlag.AlertReportWebhook]: true };
+
+    render(
+      <NotificationMethod
+        setting={mockSettingWebhook}
+        index={0}
+        onUpdate={mockOnUpdate}
+        onRemove={mockOnRemove}
+        onInputChange={mockOnInputChange}
+        email_subject={mockEmailSubject}
+        defaultSubject={mockDefaultSubject}
+        setErrorSubject={mockSetErrorSubject}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('webhook-payload-template'), {
+      target: { value: '{"message":"{{ description }}"}' },
+    });
+
+    expect(mockOnUpdate).toHaveBeenCalledWith(0, {
+      ...mockSettingWebhook,
+      payloadTemplate: '{"message":"{{ description }}"}',
     });
   });
 
