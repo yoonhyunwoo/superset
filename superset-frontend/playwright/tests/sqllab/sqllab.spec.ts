@@ -29,6 +29,7 @@
 import { test, expect } from '../../helpers/fixtures/testAssets';
 import { SqlLabPage } from '../../pages/SqlLabPage';
 import { ExplorePage } from '../../pages/ExplorePage';
+import { Input } from '../../components/core';
 import { SaveQueryModal } from '../../components/modals/SaveQueryModal';
 import { SaveDatasetModal } from '../../components/modals/SaveDatasetModal';
 import { waitForGet, waitForPost } from '../../helpers/api/intercepts';
@@ -224,7 +225,7 @@ test('saves a query and loads it from saved queries', async ({
   });
 
   // Search for the saved query by its unique name
-  const searchInput = page.locator('[data-test="filters-search"] input');
+  const searchInput = new Input(page, 'input[data-test="filters-search"]');
   await searchInput.fill(savedQueryTitle);
 
   // Wait for the filtered row to appear in the table
