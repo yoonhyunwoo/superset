@@ -105,10 +105,12 @@ export default defineConfig({
       },
     },
     {
-      // SQL Lab tests share backend tab state per user (/tabstateview/*).
-      // fullyParallel: false ensures all tests run sequentially on one worker
-      // without the skip-on-failure behavior of serial mode — a single test
-      // failure still reports remaining tests independently.
+      // SQL Lab needs its own project because tab state is stored server-side
+      // per user (/tabstateview/*). All workers share the same auth user, so
+      // parallel workers mutating tabs would cause nondeterministic tab counts
+      // and cross-worker tab deletions. Other test suites (dataset, dashboard,
+      // chart) don't need this because they create/delete isolated resources
+      // via API with unique names — no shared mutable state between tests.
       name: 'chromium-sqllab',
       testMatch: '**/tests/sqllab/**/*.spec.ts',
       fullyParallel: false,
